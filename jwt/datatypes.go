@@ -16,11 +16,11 @@ type Claims struct {
 }
 
 func (c *Claims) GetExpirationTime() (*jwtv5.NumericDate, error) {
-	return &jwtv5.NumericDate{time.Unix(c.ExpirationTime, 0)}, nil
+	return &jwtv5.NumericDate{Time: time.Unix(c.ExpirationTime, 0)}, nil
 }
 
 func (c *Claims) GetIssuedAt() (*jwtv5.NumericDate, error) {
-	return &jwtv5.NumericDate{time.Unix(c.IssuedAt, 0)}, nil
+	return &jwtv5.NumericDate{Time: time.Unix(c.IssuedAt, 0)}, nil
 }
 
 func (c *Claims) GetIssuer() (string, error) {

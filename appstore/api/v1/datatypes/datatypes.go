@@ -28,6 +28,17 @@ const (
 	Production Environment = "Production"
 )
 
+func (e Environment) GetBaseURL() string {
+	switch e {
+	case Production:
+		return "https://api.storekit.itunes.apple.com"
+	case Sandbox:
+		return "https://api.storekit-sandbox.itunes.apple.com"
+	default:
+		return ""
+	}
+}
+
 // InAppOwnershipType see https://developer.apple.com/documentation/appstoreserverapi/inappownershiptype
 type InAppOwnershipType string
 
