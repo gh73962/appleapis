@@ -1,9 +1,9 @@
-package jwt
+package jwtutil
 
 import (
 	"time"
 
-	jwtv5 "github.com/golang-jwt/jwt/v5"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // Claims see https://developer.apple.com/documentation/appstoreserverapi/generating_tokens_for_api_requests
@@ -15,23 +15,23 @@ type Claims struct {
 	BundleID       string `json:"bid"`
 }
 
-func (c *Claims) GetExpirationTime() (*jwtv5.NumericDate, error) {
-	return &jwtv5.NumericDate{Time: time.Unix(c.ExpirationTime, 0)}, nil
+func (c *Claims) GetExpirationTime() (*jwt.NumericDate, error) {
+	return &jwt.NumericDate{Time: time.Unix(c.ExpirationTime, 0)}, nil
 }
 
-func (c *Claims) GetIssuedAt() (*jwtv5.NumericDate, error) {
-	return &jwtv5.NumericDate{Time: time.Unix(c.IssuedAt, 0)}, nil
+func (c *Claims) GetIssuedAt() (*jwt.NumericDate, error) {
+	return &jwt.NumericDate{Time: time.Unix(c.IssuedAt, 0)}, nil
 }
 
 func (c *Claims) GetIssuer() (string, error) {
 	return c.Issuer, nil
 }
 
-func (c *Claims) GetAudience() (jwtv5.ClaimStrings, error) {
+func (c *Claims) GetAudience() (jwt.ClaimStrings, error) {
 	return []string{c.Audience}, nil
 }
 
-func (c *Claims) GetNotBefore() (*jwtv5.NumericDate, error) {
+func (c *Claims) GetNotBefore() (*jwt.NumericDate, error) {
 	return nil, nil
 }
 
@@ -50,8 +50,8 @@ func NewClaims(iss, bid string) *Claims {
 	}
 }
 
-func NewJWTHeader(keyID string) map[string]interface{} {
-	return map[string]interface{}{
+func NewJWTHeader(keyID string) map[string]any {
+	return map[string]any{
 		"alg": "ES256",
 		"kid": keyID,
 		"typ": "JWT",
