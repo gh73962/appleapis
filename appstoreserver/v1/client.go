@@ -12,16 +12,16 @@ import (
 	"time"
 )
 
-// Client represents the App Store Server API client
-type Client struct {
+// client represents the App Store Server API client
+type client struct {
 	baseURL        string
 	tokenGenerator *TokenGenerator
 	httpClient     *http.Client
 	userAgent      string
 }
 
-// NewClient creates a new App Store Server API client
-func NewClient(environment Environment, tokenGenerator *TokenGenerator) (*Client, error) {
+// newClient creates a new App Store Server API client
+func newClient(environment Environment, tokenGenerator *TokenGenerator) (*client, error) {
 	var baseURL string
 	switch environment {
 	case EnvironmentProduction:
@@ -32,7 +32,7 @@ func NewClient(environment Environment, tokenGenerator *TokenGenerator) (*Client
 		return nil, fmt.Errorf("invalid environment: %s", environment)
 	}
 
-	return &Client{
+	return &client{
 		baseURL:        baseURL,
 		tokenGenerator: tokenGenerator,
 		httpClient: &http.Client{
@@ -44,7 +44,7 @@ func NewClient(environment Environment, tokenGenerator *TokenGenerator) (*Client
 
 // GetTransactionInfo gets information about a single transaction
 // See https://developer.apple.com/documentation/appstoreserverapi/get_transaction_info
-func (c *Client) GetTransactionInfo(ctx context.Context, transactionID string) (*TransactionInfoResponse, error) {
+func (c *client) GetTransactionInfo(ctx context.Context, transactionID string) (*TransactionInfoResponse, error) {
 	path := fmt.Sprintf("/inApps/v1/transactions/%s", transactionID)
 
 	var response TransactionInfoResponse
@@ -57,7 +57,7 @@ func (c *Client) GetTransactionInfo(ctx context.Context, transactionID string) (
 
 // GetTransactionHistory gets a customer's transaction history for your app
 // See https://developer.apple.com/documentation/appstoreserverapi/get_transaction_history
-func (c *Client) GetTransactionHistory(ctx context.Context, transactionID string, request *TransactionHistoryRequest) (*HistoryResponse, error) {
+func (c *client) GetTransactionHistory(ctx context.Context, transactionID string, request *TransactionHistoryRequest) (*HistoryResponse, error) {
 	path := fmt.Sprintf("/inApps/v2/history/%s", transactionID)
 
 	queryParams := make(url.Values)
@@ -104,7 +104,7 @@ func (c *Client) GetTransactionHistory(ctx context.Context, transactionID string
 
 // LookUpOrderID gets a customer's in-app purchases from a receipt using the order ID
 // See https://developer.apple.com/documentation/appstoreserverapi/look_up_order_id
-func (c *Client) LookUpOrderID(ctx context.Context, orderID string) (*OrderLookupResponse, error) {
+func (c *client) LookUpOrderID(ctx context.Context, orderID string) (*OrderLookupResponse, error) {
 	path := fmt.Sprintf("/inApps/v1/lookup/%s", orderID)
 
 	var response OrderLookupResponse
@@ -117,7 +117,7 @@ func (c *Client) LookUpOrderID(ctx context.Context, orderID string) (*OrderLooku
 
 // GetRefundHistory gets a paginated list of all of a customer's refunded in-app purchases
 // See https://developer.apple.com/documentation/appstoreserverapi/get_refund_history
-func (c *Client) GetRefundHistory(ctx context.Context, transactionID string, revision *string) (*RefundHistoryResponse, error) {
+func (c *client) GetRefundHistory(ctx context.Context, transactionID string, revision *string) (*RefundHistoryResponse, error) {
 	path := fmt.Sprintf("/inApps/v2/refund/lookup/%s", transactionID)
 
 	queryParams := make(url.Values)
@@ -135,7 +135,7 @@ func (c *Client) GetRefundHistory(ctx context.Context, transactionID string, rev
 
 // ExtendRenewalDate extends the renewal date for a subscription
 // See https://developer.apple.com/documentation/appstoreserverapi/extend_a_subscription_renewal_date
-func (c *Client) ExtendRenewalDate(ctx context.Context, originalTransactionID string, request *ExtendRenewalDateRequest) (*ExtendRenewalDateResponse, error) {
+func (c *client) ExtendRenewalDate(ctx context.Context, originalTransactionID string, request *ExtendRenewalDateRequest) (*ExtendRenewalDateResponse, error) {
 	path := fmt.Sprintf("/inApps/v1/subscriptions/extend/%s", originalTransactionID)
 
 	var response ExtendRenewalDateResponse
@@ -148,7 +148,7 @@ func (c *Client) ExtendRenewalDate(ctx context.Context, originalTransactionID st
 
 // MassExtendRenewalDate extends the renewal date for all active subscribers
 // See https://developer.apple.com/documentation/appstoreserverapi/extend_subscription_renewal_dates_for_all_active_subscribers
-func (c *Client) MassExtendRenewalDate(ctx context.Context, request *MassExtendRenewalDateRequest) (*MassExtendRenewalDateResponse, error) {
+func (c *client) MassExtendRenewalDate(ctx context.Context, request *MassExtendRenewalDateRequest) (*MassExtendRenewalDateResponse, error) {
 	path := "/inApps/v1/subscriptions/extend/mass"
 
 	var response MassExtendRenewalDateResponse
@@ -161,7 +161,7 @@ func (c *Client) MassExtendRenewalDate(ctx context.Context, request *MassExtendR
 
 // GetMassExtendRenewalDateStatus checks the status of a mass renewal date extension request
 // See https://developer.apple.com/documentation/appstoreserverapi/get_status_of_subscription_renewal_date_extensions
-func (c *Client) GetMassExtendRenewalDateStatus(ctx context.Context, productID, requestIdentifier string) (*MassExtendRenewalDateStatusResponse, error) {
+func (c *client) GetMassExtendRenewalDateStatus(ctx context.Context, productID, requestIdentifier string) (*MassExtendRenewalDateStatusResponse, error) {
 	path := fmt.Sprintf("/inApps/v1/subscriptions/extend/mass/%s/%s", productID, requestIdentifier)
 
 	var response MassExtendRenewalDateStatusResponse
@@ -174,7 +174,7 @@ func (c *Client) GetMassExtendRenewalDateStatus(ctx context.Context, productID, 
 
 // GetNotificationHistory gets a list of notifications that the App Store server attempted to send
 // See https://developer.apple.com/documentation/appstoreserverapi/get_notification_history
-func (c *Client) GetNotificationHistory(ctx context.Context, paginationToken *string, request *NotificationHistoryRequest) (*NotificationHistoryResponse, error) {
+func (c *client) GetNotificationHistory(ctx context.Context, paginationToken *string, request *NotificationHistoryRequest) (*NotificationHistoryResponse, error) {
 	path := "/inApps/v1/notifications/history"
 
 	queryParams := make(url.Values)
@@ -192,7 +192,7 @@ func (c *Client) GetNotificationHistory(ctx context.Context, paginationToken *st
 
 // RequestTestNotification asks App Store Server Notifications to send a test notification
 // See https://developer.apple.com/documentation/appstoreserverapi/request_a_test_notification
-func (c *Client) RequestTestNotification(ctx context.Context) (*SendTestNotificationResponse, error) {
+func (c *client) RequestTestNotification(ctx context.Context) (*SendTestNotificationResponse, error) {
 	path := "/inApps/v1/notifications/test"
 
 	var response SendTestNotificationResponse
@@ -205,7 +205,7 @@ func (c *Client) RequestTestNotification(ctx context.Context) (*SendTestNotifica
 
 // GetTestNotificationStatus checks the status of a test notification
 // See https://developer.apple.com/documentation/appstoreserverapi/get_test_notification_status
-func (c *Client) GetTestNotificationStatus(ctx context.Context, testNotificationToken string) (*CheckTestNotificationResponse, error) {
+func (c *client) GetTestNotificationStatus(ctx context.Context, testNotificationToken string) (*CheckTestNotificationResponse, error) {
 	path := fmt.Sprintf("/inApps/v1/notifications/test/%s", testNotificationToken)
 
 	var response CheckTestNotificationResponse
@@ -218,7 +218,7 @@ func (c *Client) GetTestNotificationStatus(ctx context.Context, testNotification
 
 // SendConsumptionData sends consumption information about a consumable in-app purchase
 // See https://developer.apple.com/documentation/appstoreserverapi/send_consumption_information
-func (c *Client) SendConsumptionData(ctx context.Context, transactionID string, request *ConsumptionRequest) error {
+func (c *client) SendConsumptionData(ctx context.Context, transactionID string, request *ConsumptionRequest) error {
 	path := fmt.Sprintf("/inApps/v1/transactions/consumption/%s", transactionID)
 
 	return c.makeRequest(ctx, "PUT", path, nil, request, nil)
@@ -226,14 +226,14 @@ func (c *Client) SendConsumptionData(ctx context.Context, transactionID string, 
 
 // SetAppAccountToken sets the app account token value for a purchase
 // See https://developer.apple.com/documentation/appstoreserverapi/set-app-account-token
-func (c *Client) SetAppAccountToken(ctx context.Context, originalTransactionID string, request *UpdateAppAccountTokenRequest) error {
+func (c *client) SetAppAccountToken(ctx context.Context, originalTransactionID string, request *UpdateAppAccountTokenRequest) error {
 	path := fmt.Sprintf("/inApps/v1/transactions/%s/appAccountToken", originalTransactionID)
 
 	return c.makeRequest(ctx, "PUT", path, nil, request, nil)
 }
 
 // makeRequest performs an HTTP request to the App Store Server API
-func (c *Client) makeRequest(ctx context.Context, method, path string, queryParams url.Values, requestBody, responseBody any) error {
+func (c *client) makeRequest(ctx context.Context, method, path string, queryParams url.Values, requestBody, responseBody any) error {
 	// Generate JWT token
 	token, err := c.tokenGenerator.GenerateToken()
 	if err != nil {
@@ -296,4 +296,90 @@ func (c *Client) makeRequest(ctx context.Context, method, path string, queryPara
 	}
 
 	return nil
+}
+
+// Config contains configuration for the App Store Server SDK
+type Config struct {
+	// Private key from App Store Connect (PEM format)
+	PrivateKey []byte
+	// Key ID from App Store Connect
+	KeyID string
+	// Issuer ID from App Store Connect
+	IssuerID string
+	// Bundle ID of your app
+	BundleID string
+	// Environment (sandbox, production, etc.)
+	Environment Environment
+	// App Apple ID (required for production environment)
+	AppAppleID *int64
+	// Root certificates for JWS verification (optional, uses Apple's by default)
+	RootCertificates [][]byte
+	// Enable online checks for certificate validation
+	EnableOnlineChecks bool
+}
+
+// Client provides a high-level interface to the App Store Server API and JWS verification
+type Client struct {
+	client   *client
+	verifier *SignedDataVerifier
+}
+
+// New creates a new App Store Server instance
+func New(config Config) (*Client, error) {
+	// Validate required fields
+	if len(config.PrivateKey) == 0 {
+		return nil, fmt.Errorf("private key is required")
+	}
+	if config.KeyID == "" {
+		return nil, fmt.Errorf("key ID is required")
+	}
+	if config.IssuerID == "" {
+		return nil, fmt.Errorf("issuer ID is required")
+	}
+	if config.BundleID == "" {
+		return nil, fmt.Errorf("bundle ID is required")
+	}
+	if !config.Environment.IsValid() {
+		return nil, fmt.Errorf("invalid environment: %s", config.Environment)
+	}
+
+	// Parse private key
+	privateKey, err := ParsePrivateKeyFromPEM(config.PrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse private key: %w", err)
+	}
+
+	// Create token generator
+	tokenGenerator := NewTokenGenerator(privateKey, config.KeyID, config.IssuerID, config.BundleID)
+
+	// Create API client
+	client, err := newClient(config.Environment, tokenGenerator)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create API client: %w", err)
+	}
+
+	// Create JWS verifier
+	var rootCerts [][]byte = config.RootCertificates
+	// TODO: If no root certificates provided, use Apple's default root certificates
+
+	options := []SignedDataVerifierOption{
+		WithRootCertificates(rootCerts),
+		WithEnvironment(config.Environment),
+		WithBundleID(config.BundleID),
+	}
+
+	// Add AppAppleID only if it's provided (not nil)
+	if config.AppAppleID != nil {
+		options = append(options, WithAppAppleID(*config.AppAppleID))
+	}
+
+	verifier, err := NewSignedDataVerifier(options...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create JWS verifier: %w", err)
+	}
+
+	return &Client{
+		client:   client,
+		verifier: verifier,
+	}, nil
 }
