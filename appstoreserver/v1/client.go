@@ -50,43 +50,31 @@ func New(options ...ClientOption) (*Client, error) {
 		option(config)
 	}
 
-	// Validate configuration
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
-	// Parse private key
+
 	privateKey, err := ParsePrivateKeyFromPEM(config.PrivateKey)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse private key: %w", err)
 	}
 
-	// Create token generator
 	tokenGenerator := NewTokenGenerator(privateKey, config.KeyID, config.IssuerID, config.BundleID)
 
-	// Create API client
 	client, err := newClient(config.Environment, tokenGenerator)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
 
-	// Create JWS verifier
 	var rootCerts [][]byte = config.RootCertificates
 	// TODO: If no root certificates provided, use Apple's default root certificates
 
-	verifierOptions := []SignedDataVerifierOption{
-		WithRootCertificates(rootCerts),
-		WithEnvironment(config.Environment),
-		WithBundleID(config.BundleID),
-	}
-
-	// Add AppAppleID only if it's provided (not nil)
-	if config.AppAppleID != nil {
-		verifierOptions = append(verifierOptions, WithAppAppleID(*config.AppAppleID))
-	}
-
-	verifier, err := NewSignedDataVerifier(verifierOptions...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create JWS verifier: %w", err)
+	verifier := &SignedDataVerifier{
+		rootCertificates: rootCerts,
+		environment:      config.Environment,
+		bundleID:         config.BundleID,
+		appAppleID:       config.AppAppleID,
+		chainVerifier:    newChainVerifier(rootCerts),
 	}
 
 	return &Client{

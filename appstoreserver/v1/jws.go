@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gh73962/appleapis/appstoreservernotifications/v2"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -43,7 +44,6 @@ func (c *chainVerifier) verifyChain(certificates []string, effectiveDate int64) 
 		return nil, NewVerificationError(VerificationStatusInvalidChainLength, fmt.Errorf("expected 3 certificates in chain, got %d", len(certificates)))
 	}
 
-	// Parse certificates
 	leafCertBytes, err := base64.StdEncoding.DecodeString(certificates[0])
 	if err != nil {
 		return nil, NewVerificationError(VerificationStatusInvalidCertificate, fmt.Errorf("failed to decode leaf certificate: %w", err))
@@ -74,7 +74,6 @@ func (c *chainVerifier) verifyChain(certificates []string, effectiveDate int64) 
 		return nil, NewVerificationError(VerificationStatusInvalidCertificate, fmt.Errorf("failed to parse root certificate: %w", err))
 	}
 
-	// Check if the root certificate is trusted
 	trusted := false
 	for _, trustedRoot := range c.rootCertificates {
 		trustedRootCert, err := x509.ParseCertificate(trustedRoot)
@@ -91,7 +90,6 @@ func (c *chainVerifier) verifyChain(certificates []string, effectiveDate int64) 
 		return nil, NewVerificationError(VerificationStatusInvalidCertificate, errors.New("root certificate is not trusted"))
 	}
 
-	// Verify the certificate chain
 	roots := x509.NewCertPool()
 	roots.AddCert(rootCert)
 
@@ -109,12 +107,10 @@ func (c *chainVerifier) verifyChain(certificates []string, effectiveDate int64) 
 		return nil, NewVerificationError(VerificationStatusFailure, fmt.Errorf("certificate chain verification failed: %w", err))
 	}
 
-	// Check required OIDs for App Store certificates
 	if err := c.checkAppleOIDs(leafCert, intermediateCert); err != nil {
 		return nil, err
 	}
 
-	// Extract public key from leaf certificate
 	publicKey, ok := leafCert.PublicKey.(*ecdsa.PublicKey)
 	if !ok {
 		return nil, NewVerificationError(VerificationStatusInvalidCertificate, errors.New("leaf certificate does not contain ECDSA public key"))
@@ -128,13 +124,11 @@ func (c *chainVerifier) verifyChain(certificates []string, effectiveDate int64) 
 
 // checkAppleOIDs verifies that the certificates contain the required Apple OIDs
 func (c *chainVerifier) checkAppleOIDs(leafCert, intermediateCert *x509.Certificate) error {
-	// Check leaf certificate for Apple App Store receipt signing OID (1.2.840.113635.100.6.11.1)
 	leafOID := "1.2.840.113635.100.6.11.1"
 	if !c.hasOID(leafCert, leafOID) {
 		return NewVerificationError(VerificationStatusFailure, fmt.Errorf("leaf certificate missing required OID: %s", leafOID))
 	}
 
-	// Check intermediate certificate for Apple intermediate CA OID (1.2.840.113635.100.6.2.1)
 	intermediateOID := "1.2.840.113635.100.6.2.1"
 	if !c.hasOID(intermediateCert, intermediateOID) {
 		return NewVerificationError(VerificationStatusFailure, fmt.Errorf("intermediate certificate missing required OID: %s", intermediateOID))
@@ -156,51 +150,11 @@ func (c *chainVerifier) hasOID(cert *x509.Certificate, oidStr string) bool {
 // SignedDataVerifier provides utility methods for verifying and decoding App Store signed data
 type SignedDataVerifier struct {
 	rootCertificates   [][]byte
-	enableOnlineChecks bool
 	environment        Environment
 	bundleID           string
 	appAppleID         int64
 	chainVerifier      *chainVerifier
-}
-
-// NewSignedDataVerifier creates a new SignedDataVerifier instance using functional options
-func NewSignedDataVerifier(options ...SignedDataVerifierOption) (*SignedDataVerifier, error) {
-	config := &SignedDataVerifierConfig{}
-
-	// Apply all options
-	for _, option := range options {
-		option(config)
-	}
-
-	// Validate required fields
-	if len(config.rootCertificates) == 0 {
-		return nil, errors.New("root certificates are required")
-	}
-
-	if config.environment == "" {
-		return nil, errors.New("environment is required")
-	}
-
-	if !config.environment.IsValid() {
-		return nil, errors.New("invalid environment")
-	}
-
-	if config.bundleID == "" {
-		return nil, errors.New("bundle ID is required")
-	}
-
-	if config.environment == EnvironmentProduction && config.appAppleID == 0 {
-		return nil, errors.New("appAppleID is required when the environment is Production")
-	}
-
-	return &SignedDataVerifier{
-		rootCertificates:   config.rootCertificates,
-		enableOnlineChecks: config.enableOnlineChecks,
-		environment:        config.environment,
-		bundleID:           config.bundleID,
-		appAppleID:         config.appAppleID,
-		chainVerifier:      newChainVerifier(config.rootCertificates),
-	}, nil
+	enableOnlineChecks bool
 }
 
 // VerifyAndDecodeRenewalInfo verifies and decodes a signedRenewalInfo obtained from the App Store Server API
@@ -241,27 +195,95 @@ func (v *SignedDataVerifier) VerifyAndDecodeSignedTransaction(signedTransaction 
 	return &transactionInfo, nil
 }
 
+// VerifyAndDecodeNotification verifies and decodes an App Store Server Notification signedPayload
+func (v *SignedDataVerifier) VerifyAndDecodeNotification(signedPayload string) (*appstoreservernotifications.ResponseBodyV2DecodedPayload, error) {
+	decodedPayload, err := v.decodeSignedObject(signedPayload)
+	if err != nil {
+		return nil, err
+	}
+
+	var notification appstoreservernotifications.ResponseBodyV2DecodedPayload
+	if err := json.Unmarshal(decodedPayload, &notification); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal notification payload: %w", err)
+	}
+
+	var (
+		bundleID     string
+		appAppleID   int64
+		environment  string
+		hasValidData bool
+	)
+
+	switch {
+	case notification.Data != nil:
+		bundleID = notification.Data.BundleID
+		appAppleID = notification.Data.AppAppleID
+		environment = notification.Data.Environment
+		hasValidData = true
+	case notification.Summary != nil:
+		bundleID = notification.Summary.BundleID
+		appAppleID = notification.Summary.AppAppleID
+		environment = notification.Summary.Environment
+		hasValidData = true
+	case notification.ExternalPurchaseToken != nil:
+		bundleID = notification.ExternalPurchaseToken.BundleID
+		appAppleID = notification.ExternalPurchaseToken.AppAppleID
+		// Determine environment based on externalPurchaseId
+		if len(notification.ExternalPurchaseToken.ExternalPurchaseID) > 7 &&
+			notification.ExternalPurchaseToken.ExternalPurchaseID[:7] == "SANDBOX" {
+			environment = EnvironmentSandbox.String()
+		} else {
+			environment = EnvironmentProduction.String()
+		}
+		hasValidData = true
+	}
+
+	if !hasValidData {
+		return nil, NewVerificationError(VerificationStatusFailure, errors.New("notification contains no valid data"))
+	}
+
+	if err := v.verifyNotification(bundleID, appAppleID, Environment(environment)); err != nil {
+		return nil, err
+	}
+
+	return &notification, nil
+}
+
+// verifyNotification validates the notification's bundleID, appAppleID, and environment
+func (v *SignedDataVerifier) verifyNotification(bundleID string, appAppleID int64, environment Environment) error {
+	if bundleID != v.bundleID {
+		return NewVerificationError(VerificationStatusInvalidAppIdentifier, nil)
+	}
+
+	if v.environment == EnvironmentProduction && appAppleID != v.appAppleID {
+		return NewVerificationError(VerificationStatusInvalidAppIdentifier, nil)
+
+	}
+
+	if environment != v.environment {
+		return NewVerificationError(VerificationStatusInvalidEnvironment, nil)
+	}
+
+	return nil
+}
+
 // decodeSignedObject decodes and verifies a signed JWT object
 func (v *SignedDataVerifier) decodeSignedObject(signedObj string) ([]byte, error) {
-	// Parse the JWT without verification first to get headers
 	token, _, err := new(jwt.Parser).ParseUnverified(signedObj, jwt.MapClaims{})
 	if err != nil {
 		return nil, NewVerificationError(VerificationStatusFailure, fmt.Errorf("failed to parse JWT: %w", err))
 	}
 
-	// Get x5c header for certificate chain
 	x5cHeader, ok := token.Header["x5c"].([]any)
 	if !ok || len(x5cHeader) == 0 {
 		return nil, NewVerificationError(VerificationStatusInvalidCertificate, errors.New("x5c claim was empty"))
 	}
 
-	// Check algorithm
 	alg, ok := token.Header["alg"].(string)
 	if !ok || alg != "ES256" {
 		return nil, NewVerificationError(VerificationStatusFailure, errors.New("algorithm was not ES256"))
 	}
 
-	// Convert x5c to string slice
 	certificates := make([]string, len(x5cHeader))
 	for i, cert := range x5cHeader {
 		certStr, ok := cert.(string)
@@ -271,7 +293,6 @@ func (v *SignedDataVerifier) decodeSignedObject(signedObj string) ([]byte, error
 		certificates[i] = certStr
 	}
 
-	// Get effective date for certificate validation
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		return nil, NewVerificationError(VerificationStatusFailure, errors.New("failed to get claims"))
@@ -281,7 +302,6 @@ func (v *SignedDataVerifier) decodeSignedObject(signedObj string) ([]byte, error
 	if v.enableOnlineChecks {
 		effectiveDate = time.Now().Unix()
 	} else {
-		// Try to get signedDate or receiptCreationDate from claims
 		if signedDate, exists := claims["signedDate"]; exists {
 			if signedDateFloat, ok := signedDate.(float64); ok {
 				effectiveDate = int64(signedDateFloat) / 1000
@@ -299,13 +319,11 @@ func (v *SignedDataVerifier) decodeSignedObject(signedObj string) ([]byte, error
 		}
 	}
 
-	// Verify certificate chain and get signing key
 	signingKey, err := v.chainVerifier.verifyChain(certificates, effectiveDate)
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse and verify the JWT with the signing key
 	parsedToken, err := jwt.Parse(signedObj, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodECDSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -321,7 +339,6 @@ func (v *SignedDataVerifier) decodeSignedObject(signedObj string) ([]byte, error
 		return nil, NewVerificationError(VerificationStatusFailure, errors.New("JWT token is invalid"))
 	}
 
-	// Return the claims as JSON
 	claimsBytes, err := json.Marshal(parsedToken.Claims)
 	if err != nil {
 		return nil, NewVerificationError(VerificationStatusFailure, fmt.Errorf("failed to marshal verified claims: %w", err))

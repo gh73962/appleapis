@@ -21,7 +21,7 @@ type ClientConfig struct {
 	IssuerID         string
 	BundleID         string
 	Environment      Environment
-	AppAppleID       *int64
+	AppAppleID       int64
 	RootCertificates [][]byte
 }
 
@@ -66,7 +66,7 @@ func WithEnvironmentClient(environment Environment) ClientOption {
 // WithAppAppleIDClient sets the App Apple ID (required for production environment) for Client
 func WithAppAppleIDClient(appAppleID int64) ClientOption {
 	return func(c *ClientConfig) {
-		c.AppAppleID = &appAppleID
+		c.AppAppleID = appAppleID
 	}
 }
 
