@@ -7,6 +7,7 @@ import "time"
 type JWSTransactionDecodedPayload struct {
 	AppAccountToken             *string                `json:"appAccountToken,omitempty"`
 	BundleID                    string                 `json:"bundleId"`
+	Environment                 Environment            `json:"environment"`
 	ExpiresDate                 *int64                 `json:"expiresDate,omitempty"`
 	InAppOwnershipType          InAppOwnershipType     `json:"inAppOwnershipType"`
 	IsUpgraded                  *bool                  `json:"isUpgraded,omitempty"`
