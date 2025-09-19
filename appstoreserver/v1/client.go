@@ -68,8 +68,34 @@ func New(options ...ClientOption) (*Client, error) {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
 
-	var rootCerts [][]byte = config.RootCertificates
-	// TODO: If no root certificates provided, use Apple's default root certificates
+	var rootCerts [][]byte
+	// If no root certificates provided, use Apple's default root certificates
+	if len(config.RootCertificates) == 0 {
+		resp, err := http.Get(AppleRootCAURL)
+		if err != nil {
+			return nil, fmt.Errorf("failed to download %s: %w", AppleRootCAURL, err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("failed to download %s: HTTP %d", AppleRootCAURL, resp.StatusCode)
+		}
+
+		certData := make([]byte, 0)
+		buf := make([]byte, 1024)
+		for {
+			n, err := resp.Body.Read(buf)
+			if n > 0 {
+				certData = append(certData, buf[:n]...)
+			}
+			if err != nil {
+				break
+			}
+		}
+		rootCerts = append(rootCerts, certData)
+	} else {
+		rootCerts = config.RootCertificates
+	}
 
 	verifier := &SignedDataVerifier{
 		rootCertificates: rootCerts,
