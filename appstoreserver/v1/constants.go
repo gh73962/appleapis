@@ -6,6 +6,9 @@ const (
 	ProductionBaseURL   = "https://api.storekit.itunes.apple.com"
 	SandboxBaseURL      = "https://api.storekit-sandbox.itunes.apple.com"
 	LocalTestingBaseURL = "https://local-testing-base-url"
+	AppleRootCAURL      = "https://www.apple.com/appleca/AppleIncRootCertificate.cer"
+	AppleRootCAG2URL    = "https://www.apple.com/certificateauthority/AppleRootCA-G2.cer"
+	AppleRootCAG3URL    = "https://www.apple.com/certificateauthority/AppleRootCA-G3.cer"
 )
 
 // Environment represents the server environment, either sandbox or production.

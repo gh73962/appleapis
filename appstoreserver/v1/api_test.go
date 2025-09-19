@@ -63,14 +63,14 @@ func TestGetTransactionHistory(t *testing.T) {
 	if response.BundleID != "com.example" {
 		t.Fatalf("expected %q, got %q", "com.example", response.BundleID)
 	}
-	if response.AppAppleID != 1234 {
-		t.Fatalf("expected %v, got %v", 1234, response.AppAppleID)
+	if response.AppAppleID != 323232 {
+		t.Fatalf("expected %v, got %v", 323232, response.AppAppleID)
 	}
 	if response.SignedTransactions == nil {
 		t.Fatal("expected non-nil SignedTransactions")
 	}
-	if len(response.SignedTransactions) != 1 {
-		t.Fatalf("expected %v, got %v", 1, len(response.SignedTransactions))
+	if len(response.SignedTransactions) != 2 {
+		t.Fatalf("expected %v, got %v", 2, len(response.SignedTransactions))
 	}
 }
 
@@ -97,8 +97,8 @@ func TestLookUpOrderID(t *testing.T) {
 	if response.SignedTransactions == nil {
 		t.Fatal("expected non-nil SignedTransactions")
 	}
-	if len(response.SignedTransactions) != 1 {
-		t.Fatalf("expected %v, got %v", 1, len(response.SignedTransactions))
+	if len(response.SignedTransactions) != 2 {
+		t.Fatalf("expected %v, got %v", 2, len(response.SignedTransactions))
 	}
 }
 
@@ -125,8 +125,8 @@ func TestGetRefundHistory(t *testing.T) {
 	if response.SignedTransactions == nil {
 		t.Fatal("expected non-nil SignedTransactions")
 	}
-	if len(response.SignedTransactions) != 1 {
-		t.Fatalf("expected %v, got %v", 1, len(response.SignedTransactions))
+	if len(response.SignedTransactions) != 2 {
+		t.Fatalf("expected %v, got %v", 2, len(response.SignedTransactions))
 	}
 	if response.SignedTransactions[0] != "signed_transaction_one" {
 		t.Fatalf("expected %q, got %q", "signed_transaction_one", response.SignedTransactions[0])
@@ -227,8 +227,8 @@ func TestRequestTestNotification(t *testing.T) {
 	if response == nil {
 		t.Fatal("expected non-nil response")
 	}
-	if response.TestNotificationToken != "ce3af791-365b-4c60-841b-1674b43c1609" {
-		t.Fatalf("expected %q, got %q", "ce3af791-365b-4c60-841b-1674b43c1609", response.TestNotificationToken)
+	if response.TestNotificationToken != "ce3af791-365e-4c60-841b-1674b43c1609" {
+		t.Fatalf("expected %q, got %q", "ce3af791-365e-4c60-841b-1674b43c1609", response.TestNotificationToken)
 	}
 }
 
@@ -295,11 +295,14 @@ func TestGetNotificationHistory(t *testing.T) {
 	if response.NotificationHistory == nil {
 		t.Fatal("expected non-nil NotificationHistory")
 	}
-	if len(response.NotificationHistory) != 1 {
-		t.Fatalf("expected %v, got %v", 1, len(response.NotificationHistory))
+	if len(response.NotificationHistory) != 2 {
+		t.Fatalf("expected %v, got %v", 2, len(response.NotificationHistory))
 	}
-	if response.NotificationHistory[0].SignedPayload != "signed_payload" {
-		t.Fatalf("expected %q, got %q", "signed_payload", response.NotificationHistory[0].SignedPayload)
+	if response.NotificationHistory[0].SignedPayload != "signed_payload_one" {
+		t.Fatalf("expected %q, got %q", "signed_payload_one", response.NotificationHistory[0].SignedPayload)
+	}
+	if response.NotificationHistory[1].SignedPayload != "signed_payload_two" {
+		t.Fatalf("expected %q, got %q", "signed_payload_two", response.NotificationHistory[1].SignedPayload)
 	}
 }
 

@@ -274,6 +274,15 @@ func (v *SignedDataVerifier) decodeSignedObject(signedObj string) ([]byte, error
 		return nil, NewVerificationError(VerificationStatusFailure, fmt.Errorf("failed to parse JWT: %w", err))
 	}
 
+	// 对 LocalTesting 环境跳过签名验证
+	if v.environment == EnvironmentLocalTesting {
+		claimsBytes, err := json.Marshal(token.Claims)
+		if err != nil {
+			return nil, NewVerificationError(VerificationStatusFailure, fmt.Errorf("failed to marshal claims: %w", err))
+		}
+		return claimsBytes, nil
+	}
+
 	x5cHeader, ok := token.Header["x5c"].([]any)
 	if !ok || len(x5cHeader) == 0 {
 		return nil, NewVerificationError(VerificationStatusInvalidCertificate, errors.New("x5c claim was empty"))
