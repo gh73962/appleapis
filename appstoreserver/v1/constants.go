@@ -3,8 +3,9 @@ package appstoreserver
 // API endpoints constants
 const (
 	// Base URLs for different environments
-	ProductionBaseURL = "https://api.storekit.itunes.apple.com"
-	SandboxBaseURL    = "https://api.storekit-sandbox.itunes.apple.com"
+	ProductionBaseURL   = "https://api.storekit.itunes.apple.com"
+	SandboxBaseURL      = "https://api.storekit-sandbox.itunes.apple.com"
+	LocalTestingBaseURL = "https://local-testing-base-url"
 )
 
 // Environment represents the server environment, either sandbox or production.
@@ -15,7 +16,8 @@ const (
 	// EnvironmentSandbox represents the sandbox environment
 	EnvironmentSandbox Environment = "Sandbox"
 	// EnvironmentProduction represents the production environment
-	EnvironmentProduction Environment = "Production"
+	EnvironmentProduction   Environment = "Production"
+	EnvironmentLocalTesting Environment = "LocalTesting"
 )
 
 // String returns the string representation of the environment
@@ -26,7 +28,7 @@ func (e Environment) String() string {
 // IsValid checks if the environment value is valid
 func (e Environment) IsValid() bool {
 	switch e {
-	case EnvironmentSandbox, EnvironmentProduction:
+	case EnvironmentSandbox, EnvironmentProduction, EnvironmentLocalTesting:
 		return true
 	default:
 		return false

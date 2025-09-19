@@ -22,6 +22,8 @@ func newClient(environment Environment, tokenGenerator *TokenGenerator) (*client
 		baseURL = ProductionBaseURL
 	case EnvironmentSandbox:
 		baseURL = SandboxBaseURL
+	case EnvironmentLocalTesting:
+		baseURL = LocalTestingBaseURL
 	default:
 		return nil, fmt.Errorf("invalid environment: %s", environment)
 	}
