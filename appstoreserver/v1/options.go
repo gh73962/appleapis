@@ -2,78 +2,80 @@ package appstoreserver
 
 import "fmt"
 
-// SignedDataVerifierConfig holds the configuration for creating a SignedDataVerifier
-type SignedDataVerifierConfig struct {
-	rootCertificates   [][]byte
-	environment        Environment
-	bundleID           string
-	appAppleID         int64
-	enableOnlineChecks bool
-}
-
-// SignedDataVerifierOption is a function type for configuring SignedDataVerifier
-type SignedDataVerifierOption func(*SignedDataVerifierConfig)
-
 // ClientConfig holds the configuration for creating a Client
 type ClientConfig struct {
-	PrivateKey       []byte
-	KeyID            string
-	IssuerID         string
-	BundleID         string
-	Environment      Environment
-	AppAppleID       int64
-	RootCertificates [][]byte
+	PrivateKey         []byte
+	KeyID              string
+	IssuerID           string
+	BundleID           string
+	Environment        Environment
+	AppAppleID         int64
+	RootCertificates   [][]byte
+	EnableOnlineChecks bool
+	StrictChecks       bool
 }
 
 // ClientOption is a function type for configuring Client
 type ClientOption func(*ClientConfig)
 
 // WithPrivateKey sets the private key from App Store Connect (PEM format)
-func WithPrivateKey(privateKey []byte) ClientOption {
+func WithPrivateKey(val []byte) ClientOption {
 	return func(c *ClientConfig) {
-		c.PrivateKey = privateKey
+		c.PrivateKey = val
 	}
 }
 
 // WithKeyID sets the Key ID from App Store Connect
-func WithKeyID(keyID string) ClientOption {
+func WithKeyID(val string) ClientOption {
 	return func(c *ClientConfig) {
-		c.KeyID = keyID
+		c.KeyID = val
 	}
 }
 
 // WithIssuerID sets the Issuer ID from App Store Connect
-func WithIssuerID(issuerID string) ClientOption {
+func WithIssuerID(val string) ClientOption {
 	return func(c *ClientConfig) {
-		c.IssuerID = issuerID
+		c.IssuerID = val
 	}
 }
 
-// WithBundleIDClient sets the Bundle ID of your app for Client
-func WithBundleIDClient(bundleID string) ClientOption {
+// WithBundleID sets the Bundle ID of your app for Client
+func WithBundleID(val string) ClientOption {
 	return func(c *ClientConfig) {
-		c.BundleID = bundleID
+		c.BundleID = val
 	}
 }
 
-// WithEnvironmentClient sets the environment (sandbox, production, etc.) for Client
-func WithEnvironmentClient(environment Environment) ClientOption {
+// WithEnvironment sets the environment (sandbox, production, etc.) for Client
+func WithEnvironment(val Environment) ClientOption {
 	return func(c *ClientConfig) {
-		c.Environment = environment
+		c.Environment = val
 	}
 }
 
-// WithAppAppleIDClient sets the App Apple ID (required for production environment) for Client
-func WithAppAppleIDClient(appAppleID int64) ClientOption {
+// WithAppAppleID sets the App Apple ID (required for production environment) for Client
+func WithAppAppleID(val int64) ClientOption {
 	return func(c *ClientConfig) {
-		c.AppAppleID = appAppleID
+		c.AppAppleID = val
 	}
 }
 
-// WithRootCertificatesClient sets root certificates for JWS verification for Client
-func WithRootCertificatesClient(rootCertificates [][]byte) ClientOption {
+// WithRootCertificates sets root certificates for JWS verification for Client
+func WithRootCertificates(val [][]byte) ClientOption {
 	return func(c *ClientConfig) {
-		c.RootCertificates = rootCertificates
+		c.RootCertificates = val
+	}
+}
+
+func WithEnableOnlineChecks() ClientOption {
+	return func(config *ClientConfig) {
+		config.EnableOnlineChecks = true
+	}
+}
+
+func WithStrictChecks() ClientOption {
+	return func(config *ClientConfig) {
+		config.StrictChecks = true
 	}
 }
 
@@ -97,32 +99,4 @@ func (c *ClientConfig) Validate() error {
 	// Note: AppAppleID is optional for sandbox, required for production
 	// This validation is handled in the New function context
 	return nil
-}
-
-// WithRootCertificates sets the root certificates for certificate chain verification
-func WithRootCertificates(rootCertificates [][]byte) SignedDataVerifierOption {
-	return func(config *SignedDataVerifierConfig) {
-		config.rootCertificates = rootCertificates
-	}
-}
-
-// WithEnvironment sets the App Store environment (Sandbox or Production)
-func WithEnvironment(environment Environment) SignedDataVerifierOption {
-	return func(config *SignedDataVerifierConfig) {
-		config.environment = environment
-	}
-}
-
-// WithBundleID sets the bundle ID to verify against
-func WithBundleID(bundleID string) SignedDataVerifierOption {
-	return func(config *SignedDataVerifierConfig) {
-		config.bundleID = bundleID
-	}
-}
-
-// WithAppAppleID sets the App Apple ID (required for Production environment)
-func WithAppAppleID(appAppleID int64) SignedDataVerifierOption {
-	return func(config *SignedDataVerifierConfig) {
-		config.appAppleID = appAppleID
-	}
 }

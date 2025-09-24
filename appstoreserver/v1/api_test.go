@@ -16,7 +16,10 @@ func TestGetTransactionInfo(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	client := helper.CreateTestClient(t)
+	client, err := mockClient()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Test the API call
 	response, err := client.client.GetTransactionInfo(context.Background(), "1233214")

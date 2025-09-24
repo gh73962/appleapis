@@ -2,6 +2,7 @@ package appstoreserver
 
 import (
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -32,7 +33,7 @@ func newClient(environment Environment, tokenGenerator *TokenGenerator) (*client
 		baseURL:        baseURL,
 		tokenGenerator: tokenGenerator,
 		httpClient: &http.Client{
-			Timeout: 30 * time.Second,
+			Timeout: 5 * time.Second,
 		},
 		userAgent: "app-store-server-library/go/1.0.0",
 	}, nil
@@ -71,38 +72,52 @@ func New(options ...ClientOption) (*Client, error) {
 	var rootCerts [][]byte
 	// If no root certificates provided, use Apple's default root certificates
 	if len(config.RootCertificates) == 0 {
-		resp, err := http.Get(AppleRootCAURL)
-		if err != nil {
-			return nil, fmt.Errorf("failed to download %s: %w", AppleRootCAURL, err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			return nil, fmt.Errorf("failed to download %s: HTTP %d", AppleRootCAURL, resp.StatusCode)
-		}
-
-		certData := make([]byte, 0)
-		buf := make([]byte, 1024)
-		for {
-			n, err := resp.Body.Read(buf)
-			if n > 0 {
-				certData = append(certData, buf[:n]...)
-			}
+		for _, v := range []string{AppleRootCAURL, AppleRootCAG2URL, AppleRootCAG3URL} {
+			resp, err := http.Get(v)
 			if err != nil {
-				break
+				return nil, fmt.Errorf("failed to download %s: %w", v, err)
 			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				return nil, fmt.Errorf("failed to download %s: HTTP %d", v, resp.StatusCode)
+			}
+
+			for _, v := range []string{AppleRootCAURL, AppleRootCAG2URL, AppleRootCAG3URL} {
+				resp, err := http.Get(v)
+				if err != nil {
+					return nil, fmt.Errorf("failed to download %s: %w", v, err)
+				}
+				defer resp.Body.Close()
+
+				if resp.StatusCode != http.StatusOK {
+					return nil, fmt.Errorf("failed to download %s: HTTP %d", v, resp.StatusCode)
+				}
+
+				// 修改：使用io.ReadAll替代手动缓冲读取
+				certData, err := io.ReadAll(resp.Body)
+				if err != nil {
+					return nil, fmt.Errorf("failed to read certificate data from %s: %w", v, err)
+				}
+
+				rootCerts = append(rootCerts, certData)
+			}
+
 		}
-		rootCerts = append(rootCerts, certData)
+
 	} else {
 		rootCerts = config.RootCertificates
 	}
 
-	verifier := &SignedDataVerifier{
-		rootCertificates: rootCerts,
-		environment:      config.Environment,
-		bundleID:         config.BundleID,
-		appAppleID:       config.AppAppleID,
-		chainVerifier:    newChainVerifier(rootCerts),
+	verifier, err := NewSignedDataVerifier(
+		rootCerts,
+		config.EnableOnlineChecks,
+		config.Environment,
+		config.BundleID,
+		config.AppAppleID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create verifier: %w", err)
 	}
 
 	return &Client{
