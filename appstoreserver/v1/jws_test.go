@@ -228,7 +228,6 @@ func TestConsumptionRequestNotificationDecoding(t *testing.T) {
 		t.Fatal("expected non-nil decodedPayload")
 	}
 
-	// Verify the decoded fields
 	if string(decodedPayload.NotificationType) != "CONSUMPTION_REQUEST" {
 		t.Fatalf("expected %q, got %q", "CONSUMPTION_REQUEST", string(decodedPayload.NotificationType))
 	}
@@ -352,7 +351,6 @@ func TestExternalPurchaseTokenSandboxNotificationDecoding(t *testing.T) {
 	t.Skip("TODO")
 }
 
-// class PayloadVerification(unittest.TestCase)
 func TestAppStoreServerNotificationDecoding(t *testing.T) {
 	client, err := mockTestClient(WithEnvironment(EnvironmentSandbox))
 	if err != nil {
@@ -363,7 +361,6 @@ func TestAppStoreServerNotificationDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Test notification decoding
 	decodedPayload, err := client.verifier.VerifyAndDecodeNotification(string(testNotification))
 	if err != nil {
 		t.Fatal(err)
