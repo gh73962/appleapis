@@ -2,50 +2,20 @@ package appstoreserver
 
 import (
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
 	"github.com/gh73962/appleapis/appstoreservernotifications/v2"
 )
 
-func mockClient(opts ...ClientOption) (*Client, error) {
-	pk, err := os.ReadFile("../../testdata/certs/testSigningKey.p8")
-	if err != nil {
-		return nil, err
-	}
-
-	cert, err := os.ReadFile("../../testdata/certs/testCA.der")
-	if err != nil {
-		return nil, err
-	}
-
-	testOps := []ClientOption{
-		WithAppAppleID(1234),
-		WithBundleID("com.example"),
-		WithEnvironment(EnvironmentLocalTesting),
-		WithKeyID("keyId"),
-		WithIssuerID("issuerId"),
-		WithPrivateKey(pk),
-		WithRootCertificates([][]byte{cert}),
-	}
-
-	testOps = append(testOps, opts...)
-
-	client, err := New(testOps...)
-	if err != nil {
-		return nil, err
-	}
-
-	return client, nil
-}
-
 func TestTransactionDecoding(t *testing.T) {
-	client, err := mockClient()
+	client, err := mockTestClient()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	signedTransaction, err := CreateSignedDataFromJSON("models/signedTransaction.json")
+	signedTransaction, err := mockSignedData("models/signedTransaction.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +53,7 @@ func TestTransactionDecoding(t *testing.T) {
 	if decodedPayload.Quantity != 1 {
 		t.Fatalf("expected %v, got %v", 1, decodedPayload.Quantity)
 	}
-	if string(decodedPayload.Type) != "Auto-Renewable Subscription" {
+	if string(decodedPayload.Type) != string(TypeAutoRenewableSubscription) {
 		t.Fatalf("expected %q, got %q", "Auto-Renewable Subscription", string(decodedPayload.Type))
 	}
 	if decodedPayload.AppAccountToken != nil {
@@ -130,12 +100,12 @@ func TestTransactionDecoding(t *testing.T) {
 }
 
 func TestRenewalInfoDecoding(t *testing.T) {
-	client, err := mockClient()
+	client, err := mockTestClient()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	signedRenewalInfo, err := CreateSignedDataFromJSON("models/signedRenewalInfo.json")
+	signedRenewalInfo, err := mockSignedData("models/signedRenewalInfo.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -186,12 +156,12 @@ func TestRenewalInfoDecoding(t *testing.T) {
 }
 
 func TestNotificationDecoding(t *testing.T) {
-	client, err := mockClient()
+	client, err := mockTestClient()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	signedNotification, err := CreateSignedDataFromJSON("models/signedNotification.json")
+	signedNotification, err := mockSignedData("models/signedNotification.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -240,12 +210,12 @@ func TestNotificationDecoding(t *testing.T) {
 }
 
 func TestConsumptionRequestNotificationDecoding(t *testing.T) {
-	client, err := mockClient()
+	client, err := mockTestClient()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	signedNotification, err := CreateSignedDataFromJSON("models/signedConsumptionRequestNotification.json")
+	signedNotification, err := mockSignedData("models/signedConsumptionRequestNotification.json")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -302,18 +272,16 @@ func TestConsumptionRequestNotificationDecoding(t *testing.T) {
 }
 
 func TestSummaryNotificationDecoding(t *testing.T) {
-	client, err := mockClient()
+	client, err := mockTestClient()
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Create signed data from test JSON
-	signedNotification, err := CreateSignedDataFromJSON("models/signedSummaryNotification.json")
+	signedNotification, err := mockSignedData("models/signedSummaryNotification.json")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Test notification decoding
 	decodedPayload, err := client.verifier.VerifyAndDecodeNotification(signedNotification)
 	if err != nil {
 		t.Fatal(err)
@@ -322,15 +290,11 @@ func TestSummaryNotificationDecoding(t *testing.T) {
 		t.Fatal("expected non-nil decodedPayload")
 	}
 
-	// Verify the decoded fields
-	if string(decodedPayload.NotificationType) != "RENEWAL_EXTENSION" {
-		t.Fatalf("expected %q, got %q", "RENEWAL_EXTENSION", string(decodedPayload.NotificationType))
+	if decodedPayload.NotificationType != appstoreservernotifications.TypeRenewalExtension {
+		t.Fatalf("expected %q, got %q", appstoreservernotifications.TypeRenewalExtension, decodedPayload.NotificationType)
 	}
-	if decodedPayload.Subtype == "" {
-		t.Fatal("expected non-empty subtype")
-	}
-	if decodedPayload.Subtype != "SUMMARY" {
-		t.Fatalf("expected %q, got %q", "SUMMARY", decodedPayload.Subtype)
+	if decodedPayload.Subtype != appstoreservernotifications.SubtypeSummary {
+		t.Fatalf("expected %q, got %q", appstoreservernotifications.SubtypeSummary, decodedPayload.Subtype)
 	}
 	if decodedPayload.NotificationUUID != "002e14d5-51f5-4503-b5a8-c3a1af68eb20" {
 		t.Fatalf("expected %q, got %q", "002e14d5-51f5-4503-b5a8-c3a1af68eb20", decodedPayload.NotificationUUID)
@@ -369,10 +333,8 @@ func TestSummaryNotificationDecoding(t *testing.T) {
 		t.Fatalf("expected 3 country codes, got %d", len(decodedPayload.Summary.StorefrontCountryCodes))
 	}
 	expectedCountries := []string{"CAN", "USA", "MEX"}
-	for i, expected := range expectedCountries {
-		if decodedPayload.Summary.StorefrontCountryCodes[i] != expected {
-			t.Fatalf("expected country code %q at index %d, got %q", expected, i, decodedPayload.Summary.StorefrontCountryCodes[i])
-		}
+	if !reflect.DeepEqual(decodedPayload.Summary.StorefrontCountryCodes, expectedCountries) {
+		t.Fatalf("expected %v, got %v", expectedCountries, decodedPayload.Summary.StorefrontCountryCodes)
 	}
 	if decodedPayload.Summary.SucceededCount != 5 {
 		t.Fatalf("expected %v, got %v", 5, decodedPayload.Summary.SucceededCount)
@@ -392,7 +354,7 @@ func TestExternalPurchaseTokenSandboxNotificationDecoding(t *testing.T) {
 
 // class PayloadVerification(unittest.TestCase)
 func TestAppStoreServerNotificationDecoding(t *testing.T) {
-	client, err := mockClient(WithEnvironment(EnvironmentSandbox))
+	client, err := mockTestClient(WithEnvironment(EnvironmentSandbox))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -416,7 +378,7 @@ func TestAppStoreServerNotificationDecoding(t *testing.T) {
 }
 
 func TestAppStoreServerNotificationDecodingProduction(t *testing.T) {
-	client, err := mockClient(WithEnvironment(EnvironmentProduction))
+	client, err := mockTestClient(WithEnvironment(EnvironmentProduction))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -432,7 +394,7 @@ func TestAppStoreServerNotificationDecodingProduction(t *testing.T) {
 }
 
 func TestMissingX5CHeader(t *testing.T) {
-	client, err := mockClient(WithEnvironment(EnvironmentSandbox))
+	client, err := mockTestClient(WithEnvironment(EnvironmentSandbox))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -453,7 +415,7 @@ func TestMissingX5CHeader(t *testing.T) {
 }
 
 func TestWrongBundleIDForServerNotification(t *testing.T) {
-	client, err := mockClient(WithEnvironment(EnvironmentSandbox), WithBundleID("com.examplex"))
+	client, err := mockTestClient(WithEnvironment(EnvironmentSandbox), WithBundleID("com.examplex"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -467,13 +429,13 @@ func TestWrongBundleIDForServerNotification(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
-	if !strings.Contains(err.Error(), "bundle") {
+	if !strings.Contains(err.Error(), "INVALID_APP_IDENTIFIER") {
 		t.Fatalf("expected error to contain %q but got %q", "bundle", err.Error())
 	}
 }
 
 func TestWrongAppAppleIDForServerNotification(t *testing.T) {
-	client, err := mockClient(WithEnvironment(EnvironmentProduction), WithAppAppleID(1235))
+	client, err := mockTestClient(WithEnvironment(EnvironmentProduction), WithAppAppleID(1235))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -493,27 +455,24 @@ func TestWrongAppAppleIDForServerNotification(t *testing.T) {
 }
 
 func TestMalformedJWTWithTooManyParts(t *testing.T) {
-	client, err := mockClient(WithEnvironment(EnvironmentSandbox))
+	client, err := mockTestClient(WithEnvironment(EnvironmentSandbox))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Test with JWT that has too many parts
 	malformedJWT := "header.payload.signature.extra"
-
-	// Test transaction decoding with malformed JWT - should fail
 	_, err = client.verifier.VerifyAndDecodeSignedTransaction(malformedJWT)
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
 
-	if strings.Contains(err.Error(), "invalid") {
+	if !strings.Contains(err.Error(), "token is malformed") {
 		t.Fatalf("Received expected error for invalid JWT: %v", err)
 	}
 }
 
 func TestMalformedJWTWithMalformedData(t *testing.T) {
-	client, err := mockClient(WithEnvironment(EnvironmentSandbox))
+	client, err := mockTestClient(WithEnvironment(EnvironmentSandbox))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -523,5 +482,8 @@ func TestMalformedJWTWithMalformedData(t *testing.T) {
 	_, err = client.verifier.VerifyAndDecodeSignedTransaction(malformedJWT)
 	if err == nil {
 		t.Fatal("expected error but got nil")
+	}
+	if !strings.Contains(err.Error(), "token is malformed") {
+		t.Fatalf("Received expected error for invalid JWT: %v", err)
 	}
 }

@@ -8,12 +8,45 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 )
+
+// GetTransactionHistory gets a customer's transaction history for your app
+// See https://developer.apple.com/documentation/appstoreserverapi/get_transaction_history
+func (c *client) GetTransactionHistory(ctx context.Context, req *TransactionHistoryRequest) (*HistoryResponse, error) {
+	if req.TransactionID == "" {
+		return nil, fmt.Errorf("transactionID cannot be empty")
+	}
+
+	path := fmt.Sprintf("/inApps/v2/history/%s", req.TransactionID)
+
+	queryParams := req.makeQuery()
+
+	var response HistoryResponse
+	if err := c.makeRequest(ctx, http.MethodGet, path, queryParams, nil, &response); err != nil {
+		return nil, err
+	}
+
+	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+		return &response, nil
+	}
+	for _, v := range response.SignedTransactions {
+		payload, err := c.verifier.VerifyAndDecodeSignedTransaction(v)
+		if err != nil {
+			return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", v, err)
+		}
+		response.Payloads = append(response.Payloads, payload)
+	}
+
+	return &response, nil
+}
 
 // GetTransactionInfo gets information about a single transaction
 // See https://developer.apple.com/documentation/appstoreserverapi/get_transaction_info
 func (c *client) GetTransactionInfo(ctx context.Context, transactionID string) (*TransactionInfoResponse, error) {
+	if transactionID == "" {
+		return nil, fmt.Errorf("transactionID cannot be empty")
+	}
+
 	path := fmt.Sprintf("/inApps/v1/transactions/%s", transactionID)
 
 	var response TransactionInfoResponse
@@ -21,59 +54,91 @@ func (c *client) GetTransactionInfo(ctx context.Context, transactionID string) (
 		return nil, err
 	}
 
+	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+		return &response, nil
+	}
+
+	payload, err := c.verifier.VerifyAndDecodeSignedTransaction(response.SignedTransactionInfo)
+	if err != nil {
+		return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", response.SignedTransactionInfo, err)
+	}
+	response.Payload = payload
+
 	return &response, nil
 }
 
-// GetTransactionHistory gets a customer's transaction history for your app
-// See https://developer.apple.com/documentation/appstoreserverapi/get_transaction_history
-func (c *client) GetTransactionHistory(ctx context.Context, transactionID string, request *TransactionHistoryRequest) (*HistoryResponse, error) {
-	path := fmt.Sprintf("/inApps/v2/history/%s", transactionID)
+// GetAllSubscriptionStatuses gets the statuses for all of a customer's auto-renewable subscriptions in your app
+// See https://developer.apple.com/documentation/appstoreserverapi/get_all_subscription_statuses
+func (c *client) GetAllSubscriptionStatuses(ctx context.Context, transactionID string, status ...SubscriptionStatus) (*StatusResponse, error) {
+	if transactionID == "" {
+		return nil, fmt.Errorf("transactionID cannot be empty")
+	}
+
+	path := fmt.Sprintf("/inApps/v1/subscriptions/%s", transactionID)
 
 	queryParams := make(url.Values)
-	if request != nil {
-		if request.Sort != "" {
-			queryParams.Add("sort", request.Sort)
-		}
-		if len(request.ProductIDs) > 0 {
-			for _, productID := range request.ProductIDs {
-				queryParams.Add("productId", productID)
-			}
-		}
-		if len(request.ProductTypes) > 0 {
-			for _, productType := range request.ProductTypes {
-				queryParams.Add("productType", productType)
-			}
-		}
-		if request.StartDate != 0 {
-			queryParams.Add("startDate", strconv.FormatInt(request.StartDate, 10))
-		}
-		if request.EndDate != 0 {
-			queryParams.Add("endDate", strconv.FormatInt(request.EndDate, 10))
-		}
-		if len(request.SubscriptionGroupIdentifiers) > 0 {
-			for _, id := range request.SubscriptionGroupIdentifiers {
-				queryParams.Add("subscriptionGroupIdentifier", id)
-			}
-		}
-		if request.InAppOwnershipType != "" {
-			queryParams.Add("inAppOwnershipType", request.InAppOwnershipType)
-		}
-		if request.Revoked {
-			queryParams.Add("revoked", strconv.FormatBool(request.Revoked))
+	if len(status) > 0 {
+		for _, s := range status {
+			queryParams.Add("status", s.String())
 		}
 	}
 
-	var response HistoryResponse
+	var response StatusResponse
 	if err := c.makeRequest(ctx, http.MethodGet, path, queryParams, nil, &response); err != nil {
 		return nil, err
 	}
 
+	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+		return &response, nil
+	}
+
+	for _, data := range response.Data {
+		for i, v := range data.LastTransactions {
+			renewalPayload, err := c.verifier.VerifyAndDecodeRenewalInfo(v.SignedRenewalInfo)
+			if err != nil {
+				return nil, fmt.Errorf("SignedRenewalInfo %s\nfailed to verify and decode: %w", v.SignedRenewalInfo, err)
+			}
+			data.LastTransactions[i].RenewalPayload = renewalPayload
+			transactionPayload, err := c.verifier.VerifyAndDecodeSignedTransaction(v.SignedTransactionInfo)
+			if err != nil {
+				return nil, fmt.Errorf("SignedTransactionInfo %s\nfailed to verify and decode: %w", v.SignedTransactionInfo, err)
+			}
+			data.LastTransactions[i].TransactionPayload = transactionPayload
+		}
+	}
+
 	return &response, nil
+}
+
+// SetAppAccountToken sets the app account token value for a purchase
+// See https://developer.apple.com/documentation/appstoreserverapi/set-app-account-token
+func (c *client) SetAppAccountToken(ctx context.Context, req *UpdateAppAccountTokenRequest) error {
+	if err := req.Validate(); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+
+	path := fmt.Sprintf("/inApps/v1/transactions/%s/appAccountToken", req.OriginalTransactionID)
+	return c.makeRequest(ctx, http.MethodPut, path, nil, req, nil)
+}
+
+// SendConsumptionData sends consumption information about a consumable in-app purchase
+// See https://developer.apple.com/documentation/appstoreserverapi/send_consumption_information
+func (c *client) SendConsumptionInfo(ctx context.Context, req *ConsumptionRequest) error {
+	if err := req.Validate(); err != nil {
+		return fmt.Errorf("invalid request: %w", err)
+	}
+
+	path := fmt.Sprintf("/inApps/v1/transactions/consumption/%s", req.TransactionID)
+	return c.makeRequest(ctx, http.MethodPut, path, nil, req, nil)
 }
 
 // LookUpOrderID gets a customer's in-app purchases from a receipt using the order ID
 // See https://developer.apple.com/documentation/appstoreserverapi/look_up_order_id
 func (c *client) LookUpOrderID(ctx context.Context, orderID string) (*OrderLookupResponse, error) {
+	if orderID == "" {
+		return nil, fmt.Errorf("orderID cannot be empty")
+	}
+
 	path := fmt.Sprintf("/inApps/v1/lookup/%s", orderID)
 
 	var response OrderLookupResponse
@@ -81,17 +146,33 @@ func (c *client) LookUpOrderID(ctx context.Context, orderID string) (*OrderLooku
 		return nil, err
 	}
 
+	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+		return &response, nil
+	}
+
+	for _, v := range response.SignedTransactions {
+		payload, err := c.verifier.VerifyAndDecodeSignedTransaction(v)
+		if err != nil {
+			return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", v, err)
+		}
+		response.Payloads = append(response.Payloads, payload)
+	}
+
 	return &response, nil
 }
 
 // GetRefundHistory gets a paginated list of all of a customer's refunded in-app purchases
 // See https://developer.apple.com/documentation/appstoreserverapi/get_refund_history
-func (c *client) GetRefundHistory(ctx context.Context, transactionID string, revision *string) (*RefundHistoryResponse, error) {
+func (c *client) GetRefundHistory(ctx context.Context, transactionID, revision string) (*RefundHistoryResponse, error) {
+	if transactionID == "" {
+		return nil, fmt.Errorf("transactionID cannot be empty")
+	}
+
 	path := fmt.Sprintf("/inApps/v2/refund/lookup/%s", transactionID)
 
 	queryParams := make(url.Values)
-	if revision != nil {
-		queryParams.Add("revision", *revision)
+	if revision != "" {
+		queryParams.Add("revision", revision)
 	}
 
 	var response RefundHistoryResponse
@@ -99,29 +180,49 @@ func (c *client) GetRefundHistory(ctx context.Context, transactionID string, rev
 		return nil, err
 	}
 
+	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+		return &response, nil
+	}
+
+	for _, v := range response.SignedTransactions {
+		payload, err := c.verifier.VerifyAndDecodeSignedTransaction(v)
+		if err != nil {
+			return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", v, err)
+		}
+		response.Payloads = append(response.Payloads, payload)
+	}
+
 	return &response, nil
 }
 
-// ExtendRenewalDate extends the renewal date for a subscription
+// ExtendSubscriptionRenewalDate extends the renewal date for a subscription
 // See https://developer.apple.com/documentation/appstoreserverapi/extend_a_subscription_renewal_date
-func (c *client) ExtendRenewalDate(ctx context.Context, originalTransactionID string, request *ExtendRenewalDateRequest) (*ExtendRenewalDateResponse, error) {
-	path := fmt.Sprintf("/inApps/v1/subscriptions/extend/%s", originalTransactionID)
+func (c *client) ExtendSubscriptionRenewalDate(ctx context.Context, req *ExtendRenewalDateRequest) (*ExtendRenewalDateResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
+	path := fmt.Sprintf("/inApps/v1/subscriptions/extend/%s", req.OriginalTransactionID)
 
 	var response ExtendRenewalDateResponse
-	if err := c.makeRequest(ctx, http.MethodPut, path, nil, request, &response); err != nil {
+	if err := c.makeRequest(ctx, http.MethodPut, path, nil, req, &response); err != nil {
 		return nil, err
 	}
 
 	return &response, nil
 }
 
-// MassExtendRenewalDate extends the renewal date for all active subscribers
+// MassExtendSubscriptionRenewalDate extends the renewal date for all active subscribers
 // See https://developer.apple.com/documentation/appstoreserverapi/extend_subscription_renewal_dates_for_all_active_subscribers
-func (c *client) MassExtendRenewalDate(ctx context.Context, request *MassExtendRenewalDateRequest) (*MassExtendRenewalDateResponse, error) {
+func (c *client) MassExtendSubscriptionRenewalDate(ctx context.Context, req *MassExtendRenewalDateRequest) (*MassExtendRenewalDateResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
 	path := "/inApps/v1/subscriptions/extend/mass"
 
 	var response MassExtendRenewalDateResponse
-	if err := c.makeRequest(ctx, http.MethodPost, path, nil, request, &response); err != nil {
+	if err := c.makeRequest(ctx, http.MethodPost, path, nil, req, &response); err != nil {
 		return nil, err
 	}
 
@@ -131,6 +232,13 @@ func (c *client) MassExtendRenewalDate(ctx context.Context, request *MassExtendR
 // GetMassExtendRenewalDateStatus checks the status of a mass renewal date extension request
 // See https://developer.apple.com/documentation/appstoreserverapi/get_status_of_subscription_renewal_date_extensions
 func (c *client) GetMassExtendRenewalDateStatus(ctx context.Context, productID, requestIdentifier string) (*MassExtendRenewalDateStatusResponse, error) {
+	if productID == "" {
+		return nil, fmt.Errorf("productID cannot be empty")
+	}
+	if requestIdentifier == "" {
+		return nil, fmt.Errorf("requestIdentifier cannot be empty")
+	}
+
 	path := fmt.Sprintf("/inApps/v1/subscriptions/extend/mass/%s/%s", productID, requestIdentifier)
 
 	var response MassExtendRenewalDateStatusResponse
@@ -143,17 +251,33 @@ func (c *client) GetMassExtendRenewalDateStatus(ctx context.Context, productID, 
 
 // GetNotificationHistory gets a list of notifications that the App Store server attempted to send
 // See https://developer.apple.com/documentation/appstoreserverapi/get_notification_history
-func (c *client) GetNotificationHistory(ctx context.Context, paginationToken *string, request *NotificationHistoryRequest) (*NotificationHistoryResponse, error) {
+func (c *client) GetNotificationHistory(ctx context.Context, req *NotificationHistoryRequest) (*NotificationHistoryResponse, error) {
+	if err := req.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid request: %w", err)
+	}
+
 	path := "/inApps/v1/notifications/history"
 
 	queryParams := make(url.Values)
-	if paginationToken != nil {
-		queryParams.Add("paginationToken", *paginationToken)
+	if req.PaginationToken != "" {
+		queryParams.Add("paginationToken", req.PaginationToken)
 	}
 
 	var response NotificationHistoryResponse
-	if err := c.makeRequest(ctx, http.MethodPost, path, queryParams, request, &response); err != nil {
+	if err := c.makeRequest(ctx, http.MethodPost, path, queryParams, req, &response); err != nil {
 		return nil, err
+	}
+
+	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+		return &response, nil
+	}
+
+	for i, v := range response.NotificationHistory {
+		payload, err := c.verifier.VerifyAndDecodeNotification(v.SignedPayload)
+		if err != nil {
+			return nil, fmt.Errorf("SignedPayload %s\nfailed to verify and decode: %w", v.SignedPayload, err)
+		}
+		response.NotificationHistory[i].Payload = payload
 	}
 
 	return &response, nil
@@ -175,6 +299,10 @@ func (c *client) RequestTestNotification(ctx context.Context) (*SendTestNotifica
 // GetTestNotificationStatus checks the status of a test notification
 // See https://developer.apple.com/documentation/appstoreserverapi/get_test_notification_status
 func (c *client) GetTestNotificationStatus(ctx context.Context, testNotificationToken string) (*CheckTestNotificationResponse, error) {
+	if testNotificationToken == "" {
+		return nil, fmt.Errorf("testNotificationToken cannot be empty")
+	}
+
 	path := fmt.Sprintf("/inApps/v1/notifications/test/%s", testNotificationToken)
 
 	var response CheckTestNotificationResponse
@@ -182,26 +310,20 @@ func (c *client) GetTestNotificationStatus(ctx context.Context, testNotification
 		return nil, err
 	}
 
+	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+		return &response, nil
+	}
+
+	payload, err := c.verifier.VerifyAndDecodeNotification(response.SignedPayload)
+	if err != nil {
+		return nil, fmt.Errorf("SignedPayload %s\nfailed to verify and decode: %w", response.SignedPayload, err)
+	}
+	response.Payload = payload
+
 	return &response, nil
 }
 
-// SendConsumptionData sends consumption information about a consumable in-app purchase
-// See https://developer.apple.com/documentation/appstoreserverapi/send_consumption_information
-func (c *client) SendConsumptionData(ctx context.Context, transactionID string, request *ConsumptionRequest) error {
-	path := fmt.Sprintf("/inApps/v1/transactions/consumption/%s", transactionID)
-
-	return c.makeRequest(ctx, http.MethodPut, path, nil, request, nil)
-}
-
-// SetAppAccountToken sets the app account token value for a purchase
-// See https://developer.apple.com/documentation/appstoreserverapi/set-app-account-token
-func (c *client) SetAppAccountToken(ctx context.Context, originalTransactionID string, request *UpdateAppAccountTokenRequest) error {
-	path := fmt.Sprintf("/inApps/v1/transactions/%s/appAccountToken", originalTransactionID)
-
-	return c.makeRequest(ctx, http.MethodPut, path, nil, request, nil)
-}
-
-// makeRequest performs an HTTP request to the App Store Server API
+// makereq performs an HTTP req to the App Store Server API
 func (c *client) makeRequest(ctx context.Context, method, path string, queryParams url.Values, requestBody, responseBody any) error {
 	token, err := c.tokenGenerator.GenerateToken()
 	if err != nil {
@@ -217,7 +339,7 @@ func (c *client) makeRequest(ctx context.Context, method, path string, queryPara
 	if requestBody != nil {
 		bodyBytes, err := json.Marshal(requestBody)
 		if err != nil {
-			return fmt.Errorf("failed to marshal request body: %w", err)
+			return fmt.Errorf("failed to marshal req body: %w", err)
 		}
 		bodyReader = bytes.NewReader(bodyBytes)
 	}
@@ -236,7 +358,7 @@ func (c *client) makeRequest(ctx context.Context, method, path string, queryPara
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("HTTP request failed: %w", err)
+		return fmt.Errorf("HTTP req failed: %w", err)
 	}
 	defer resp.Body.Close()
 

@@ -155,14 +155,13 @@ const (
 type AccountTenure int
 
 const (
-	AccountTenureUndeclared AccountTenure = 0 // Account age is undeclared
-	AccountTenure3Days      AccountTenure = 1 // 0-3 days
-	AccountTenure10Days     AccountTenure = 2 // 3-10 days
-	AccountTenure30Days     AccountTenure = 3 // 10-30 days
-	AccountTenure90Days     AccountTenure = 4 // 30-90 days
-	AccountTenure180Days    AccountTenure = 5 // 90-180 days
-	AccountTenure365Days    AccountTenure = 6 // 180-365 days
-	AccountTenureOver365    AccountTenure = 7 // Over 365 days
+	AccountTenure3Days   AccountTenure = 1 // 0-3 days
+	AccountTenure10Days  AccountTenure = 2 // 3-10 days
+	AccountTenure30Days  AccountTenure = 3 // 10-30 days
+	AccountTenure90Days  AccountTenure = 4 // 30-90 days
+	AccountTenure180Days AccountTenure = 5 // 90-180 days
+	AccountTenure365Days AccountTenure = 6 // 180-365 days
+	AccountTenureOver365 AccountTenure = 7 // Over 365 days
 )
 
 // ConsumptionStatus indicates the status of the in-app purchase.
@@ -170,7 +169,6 @@ const (
 type ConsumptionStatus int
 
 const (
-	ConsumptionStatusUndeclared        ConsumptionStatus = 0
 	ConsumptionStatusNotConsumed       ConsumptionStatus = 1
 	ConsumptionStatusPartiallyConsumed ConsumptionStatus = 2
 	ConsumptionStatusFullyConsumed     ConsumptionStatus = 3
@@ -222,9 +220,8 @@ const (
 type Platform int
 
 const (
-	PlatformUndeclared Platform = 0
-	PlatformApple      Platform = 1
-	PlatformNonApple   Platform = 2
+	PlatformApple    Platform = 1
+	PlatformNonApple Platform = 2
 )
 
 // PlayTime indicates the amount of time the customer used the app.
@@ -232,7 +229,6 @@ const (
 type PlayTime int
 
 const (
-	PlayTimeUndeclared PlayTime = 0 // Undeclared
 	PlayTime5Min       PlayTime = 1 // 0-5 minutes
 	PlayTime1Hour      PlayTime = 2 // 5-60 minutes
 	PlayTime6Hours     PlayTime = 3 // 1-6 hours
@@ -247,7 +243,6 @@ const (
 type UserStatus int
 
 const (
-	UserStatusUndeclared    UserStatus = 0
 	UserStatusActive        UserStatus = 1
 	UserStatusSuspended     UserStatus = 2
 	UserStatusTerminated    UserStatus = 3
@@ -259,7 +254,6 @@ const (
 type ExtendReasonCode int
 
 const (
-	ExtendReasonCodeUndeclared      ExtendReasonCode = 0
 	ExtendReasonCodeCustomerSatisfy ExtendReasonCode = 1
 	ExtendReasonCodeOther           ExtendReasonCode = 2
 	ExtendReasonCodeServiceIssue    ExtendReasonCode = 3
@@ -292,4 +286,44 @@ const (
 	SendAttemptResultPrematureClose               SendAttemptResult = "PREMATURE_CLOSE"
 	SendAttemptResultUnsuccessfulHTTPResponseCode SendAttemptResult = "UNSUCCESSFUL_HTTP_RESPONSE_CODE"
 	SendAttemptResultOther                        SendAttemptResult = "OTHER"
+)
+
+// SubscriptionStatus represents the status of an auto-renewable subscription.
+// See https://developer.apple.com/documentation/appstoreserverapi/status
+type SubscriptionStatus int
+
+const (
+	StatusActive             SubscriptionStatus = 1
+	StatusExpired            SubscriptionStatus = 2
+	StatusBillingRetry       SubscriptionStatus = 3
+	StatusBillingGracePeriod SubscriptionStatus = 4
+	StatusRevoked            SubscriptionStatus = 5
+)
+
+// String returns the string representation of the Status
+func (s SubscriptionStatus) String() string {
+	switch s {
+	case StatusActive:
+		return "1"
+	case StatusExpired:
+		return "2"
+	case StatusBillingRetry:
+		return "3"
+	case StatusBillingGracePeriod:
+		return "4"
+	case StatusRevoked:
+		return "5"
+	default:
+		return ""
+	}
+}
+
+// RefundPreference indicates your preferred outcome for the refund request.
+// See https://developer.apple.com/documentation/appstoreserverapi/refundpreference
+type RefundPreference int
+
+const (
+	RefundPreferenceGrant        RefundPreference = 1 // You prefer that Apple grants the refund
+	RefundPreferenceDecline      RefundPreference = 2 // You prefer that Apple declines the refund
+	RefundPreferenceNoPreference RefundPreference = 3 // You have no preference whether Apple grants or declines the refund
 )

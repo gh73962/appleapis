@@ -311,6 +311,7 @@ type SignedDataVerifier struct {
 	appAppleID         int64
 	chainVerifier      *chainVerifier
 	enableOnlineChecks bool
+	enableAutoDecode   bool
 }
 
 // NewSignedDataVerifier creates a new SignedDataVerifier instance
@@ -398,7 +399,7 @@ func (v *SignedDataVerifier) VerifyAndDecodeNotification(signedPayload string) (
 	case notification.Summary != nil:
 		bundleID = notification.Summary.BundleID
 		appAppleID = notification.Summary.AppAppleID
-
+		environment = notification.Summary.Environment
 	case notification.ExternalPurchaseToken != nil:
 		bundleID = notification.ExternalPurchaseToken.BundleID
 		appAppleID = notification.ExternalPurchaseToken.AppAppleID
@@ -414,7 +415,7 @@ func (v *SignedDataVerifier) VerifyAndDecodeNotification(signedPayload string) (
 	}
 
 	if Environment(environment) != v.environment {
-		return nil, NewVerificationError(VerificationStatusInvalidEnvironment, nil)
+		return nil, NewVerificationError(VerificationStatusInvalidEnvironment, fmt.Errorf("expected %q, got %q", v.environment, Environment(environment)))
 	}
 
 	return &notification, nil

@@ -1,6 +1,9 @@
 package appstoreserver
 
-import "fmt"
+import (
+	"fmt"
+	"net/http"
+)
 
 // ClientConfig holds the configuration for creating a Client
 type ClientConfig struct {
@@ -12,7 +15,7 @@ type ClientConfig struct {
 	AppAppleID         int64
 	RootCertificates   [][]byte
 	EnableOnlineChecks bool
-	StrictChecks       bool
+	HTTPClient         *http.Client
 }
 
 // ClientOption is a function type for configuring Client
@@ -73,9 +76,10 @@ func WithEnableOnlineChecks() ClientOption {
 	}
 }
 
-func WithStrictChecks() ClientOption {
-	return func(config *ClientConfig) {
-		config.StrictChecks = true
+// WithHTTPClient sets a custom HTTP client for API requests
+func WithHTTPClient(client *http.Client) ClientOption {
+	return func(c *ClientConfig) {
+		c.HTTPClient = client
 	}
 }
 
@@ -96,7 +100,6 @@ func (c *ClientConfig) Validate() error {
 	if !c.Environment.IsValid() {
 		return fmt.Errorf("invalid environment: %s", c.Environment)
 	}
-	// Note: AppAppleID is optional for sandbox, required for production
-	// This validation is handled in the New function context
+
 	return nil
 }

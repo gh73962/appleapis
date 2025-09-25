@@ -13,10 +13,11 @@ type client struct {
 	tokenGenerator *TokenGenerator
 	httpClient     *http.Client
 	userAgent      string
+	verifier       *SignedDataVerifier
 }
 
 // newClient creates a new App Store Server API client
-func newClient(environment Environment, tokenGenerator *TokenGenerator) (*client, error) {
+func newClient(environment Environment, tokenGenerator *TokenGenerator, httpClient *http.Client) (*client, error) {
 	var baseURL string
 	switch environment {
 	case EnvironmentProduction:
@@ -29,20 +30,23 @@ func newClient(environment Environment, tokenGenerator *TokenGenerator) (*client
 		return nil, fmt.Errorf("invalid environment: %s", environment)
 	}
 
+	if httpClient == nil {
+		httpClient = &http.Client{
+			Timeout: 5 * time.Second,
+		}
+	}
+
 	return &client{
 		baseURL:        baseURL,
 		tokenGenerator: tokenGenerator,
-		httpClient: &http.Client{
-			Timeout: 5 * time.Second,
-		},
-		userAgent: "app-store-server-library/go/1.0.0",
+		httpClient:     httpClient,
+		userAgent:      "app-store-server-library/go/1.0.0",
 	}, nil
 }
 
 // Client provides a high-level interface to the App Store Server API and JWS verification
 type Client struct {
-	client   *client
-	verifier *SignedDataVerifier
+	*client
 }
 
 // New creates a new App Store Server instance using the option pattern
@@ -64,7 +68,7 @@ func New(options ...ClientOption) (*Client, error) {
 
 	tokenGenerator := NewTokenGenerator(privateKey, config.KeyID, config.IssuerID, config.BundleID)
 
-	client, err := newClient(config.Environment, tokenGenerator)
+	client, err := newClient(config.Environment, tokenGenerator, config.HTTPClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create API client: %w", err)
 	}
@@ -120,8 +124,8 @@ func New(options ...ClientOption) (*Client, error) {
 		return nil, fmt.Errorf("failed to create verifier: %w", err)
 	}
 
+	client.verifier = verifier
 	return &Client{
-		client:   client,
-		verifier: verifier,
+		client: client,
 	}, nil
 }

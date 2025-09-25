@@ -4,7 +4,7 @@ package appstoreservernotifications
 // See https://developer.apple.com/documentation/appstoreservernotifications/responsebodyv2decodedpayload
 type ResponseBodyV2DecodedPayload struct {
 	NotificationType      NotificationType       `json:"notificationType,omitempty"`
-	Subtype               string                 `json:"subtype,omitempty"`
+	Subtype               Subtype                `json:"subtype,omitempty"`
 	NotificationUUID      string                 `json:"notificationUUID,omitempty"`
 	Data                  *Data                  `json:"data,omitempty"`
 	Version               string                 `json:"version,omitempty"`

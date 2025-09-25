@@ -1,99 +1,20 @@
 package appstoreserver
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/json"
-	"fmt"
+	"io"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"path/filepath"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-// TestHelper provides utilities for testing the App Store Server API client
-type TestHelper struct {
-	privateKey *ecdsa.PrivateKey
-	server     *httptest.Server
-	responses  map[string]TestResponse
-}
-
-// TestResponse represents a mock HTTP response
-type TestResponse struct {
-	StatusCode int
-	Body       string
-	Headers    map[string]string
-}
-
-// NewTestHelper creates a new test helper
-func NewTestHelper() *TestHelper {
-	privateKey, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-
-	helper := &TestHelper{
-		privateKey: privateKey,
-		responses:  make(map[string]TestResponse),
-	}
-
-	// Create mock HTTP server
-	helper.server = httptest.NewServer(http.HandlerFunc(helper.handleRequest))
-
-	return helper
-}
-
-// Close cleans up the test helper
-func (h *TestHelper) Close() {
-	if h.server != nil {
-		h.server.Close()
-	}
-}
-
-// SetResponse sets a mock response for a specific request
-func (h *TestHelper) SetResponse(method, path string, response TestResponse) {
-	key := fmt.Sprintf("%s %s", method, path)
-	h.responses[key] = response
-}
-
-// SetResponseFromFile sets a mock response from a test data file
-func (h *TestHelper) SetResponseFromFile(method, path, filePath string) error {
-	body, err := ReadTestDataFile(filePath)
-	if err != nil {
-		return err
-	}
-
-	h.SetResponse(method, path, TestResponse{
-		StatusCode: 200,
-		Body:       string(body),
-		Headers:    map[string]string{"Content-Type": "application/json"},
-	})
-
-	return nil
-}
-
-// handleRequest handles incoming HTTP requests for the mock server
-func (h *TestHelper) handleRequest(w http.ResponseWriter, r *http.Request) {
-	key := fmt.Sprintf("%s %s", r.Method, r.URL.Path)
-
-	response, exists := h.responses[key]
-	if !exists {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(`{"errorCode": 4040010, "errorMessage": "Not Found"}`))
-		return
-	}
-
-	// Set headers
-	for key, value := range response.Headers {
-		w.Header().Set(key, value)
-	}
-
-	w.WriteHeader(response.StatusCode)
-	w.Write([]byte(response.Body))
-}
-
-// CreateSignedDataFromJSON creates a JWT signed data from a JSON test file
-func CreateSignedDataFromJSON(filePath string) (string, error) {
+func mockSignedData(filePath string) (string, error) {
 	data, err := os.ReadFile(filepath.Join("../../testdata/", filePath))
 	if err != nil {
 		return "", err
@@ -117,4 +38,73 @@ func CreateSignedDataFromJSON(filePath string) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func mockTestClient(opts ...ClientOption) (*Client, error) {
+	pk, err := os.ReadFile("../../testdata/certs/testSigningKey.p8")
+	if err != nil {
+		return nil, err
+	}
+
+	cert, err := os.ReadFile("../../testdata/certs/testCA.der")
+	if err != nil {
+		return nil, err
+	}
+
+	testOps := []ClientOption{
+		WithAppAppleID(1234),
+		WithBundleID("com.example"),
+		WithEnvironment(EnvironmentLocalTesting),
+		WithKeyID("keyId"),
+		WithIssuerID("issuerId"),
+		WithPrivateKey(pk),
+		WithRootCertificates([][]byte{cert}),
+	}
+
+	testOps = append(testOps, opts...)
+
+	client, err := New(testOps...)
+	if err != nil {
+		return nil, err
+	}
+
+	return client, nil
+}
+
+type mockTransport struct {
+	RoundTripFunc func(req *http.Request) (*http.Response, error)
+}
+
+func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+	return m.RoundTripFunc(req)
+}
+
+func mockClientWithBody(filePath string, statusCode int, opts ...ClientOption) (*Client, error) {
+	var (
+		responseBody []byte
+		err          error
+	)
+	if filePath != "" {
+		responseBody, err = os.ReadFile(filepath.Join("../../testdata/", filePath))
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	mockTransport := &mockTransport{
+		RoundTripFunc: func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: statusCode,
+				Header:     http.Header{"Content-Type": []string{"application/json"}},
+				Body:       io.NopCloser(bytes.NewBuffer(responseBody)),
+			}, nil
+		},
+	}
+
+	httpClient := &http.Client{
+		Transport: mockTransport,
+	}
+
+	opts = append(opts, WithHTTPClient(httpClient))
+	return mockTestClient(opts...)
 }
