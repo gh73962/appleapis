@@ -23,10 +23,8 @@ func NewAPIErrorFromResponse(resp *http.Response, body []byte) *APIError {
 	var apiErr APIError
 	apiErr.HTTPStatus = resp.StatusCode
 
-	// Try to decode JSON error response
 	if len(body) > 0 {
 		if err := json.Unmarshal(body, &apiErr); err != nil {
-			// If JSON parsing fails, use the response body as error message
 			apiErr.ErrorMessage = string(body)
 		}
 	} else {

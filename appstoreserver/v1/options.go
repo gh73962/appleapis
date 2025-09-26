@@ -1,22 +1,8 @@
 package appstoreserver
 
 import (
-	"fmt"
 	"net/http"
 )
-
-// ClientConfig holds the configuration for creating a Client
-type ClientConfig struct {
-	PrivateKey         []byte
-	KeyID              string
-	IssuerID           string
-	BundleID           string
-	Environment        Environment
-	AppAppleID         int64
-	RootCertificates   [][]byte
-	EnableOnlineChecks bool
-	HTTPClient         *http.Client
-}
 
 // ClientOption is a function type for configuring Client
 type ClientOption func(*ClientConfig)
@@ -83,23 +69,9 @@ func WithHTTPClient(client *http.Client) ClientOption {
 	}
 }
 
-// Validate validates the ClientConfig and returns an error if any required field is missing or invalid
-func (c *ClientConfig) Validate() error {
-	if len(c.PrivateKey) == 0 {
-		return fmt.Errorf("private key is required")
+// WithEnableAutoDecode enables automatic decoding and verification of JWS in API responses
+func WithEnableAutoDecode() ClientOption {
+	return func(config *ClientConfig) {
+		config.EnableAutoDecode = true
 	}
-	if c.KeyID == "" {
-		return fmt.Errorf("key ID is required")
-	}
-	if c.IssuerID == "" {
-		return fmt.Errorf("issuer ID is required")
-	}
-	if c.BundleID == "" {
-		return fmt.Errorf("bundle ID is required")
-	}
-	if !c.Environment.IsValid() {
-		return fmt.Errorf("invalid environment: %s", c.Environment)
-	}
-
-	return nil
 }

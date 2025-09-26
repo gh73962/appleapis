@@ -15,7 +15,7 @@ type Claims struct {
 	Issuer         string `json:"iss"`
 	IssuedAt       int64  `json:"iat"`
 	ExpirationTime int64  `json:"exp"`
-	Audience       string `json:"aud"` // Audience must appstoreconnect-v1
+	Audience       string `json:"aud"`
 	BundleID       string `json:"bid"`
 }
 
@@ -44,28 +44,15 @@ func (c *Claims) GetSubject() (string, error) {
 }
 
 func NewClaims(iss, bid string) *Claims {
-	t := time.Now()
+	now := time.Now()
 	return &Claims{
 		Issuer:         iss,
-		IssuedAt:       t.Unix(),
-		ExpirationTime: t.Add(30 * time.Minute).Unix(),
+		IssuedAt:       now.Unix(),
+		ExpirationTime: now.Add(5 * time.Minute).Unix(),
 		Audience:       "appstoreconnect-v1",
 		BundleID:       bid,
 	}
 }
-
-func NewJWTHeader(keyID string) map[string]any {
-	return map[string]any{
-		"alg": "ES256",
-		"kid": keyID,
-		"typ": "JWT",
-	}
-}
-
-const (
-	// JWTAudience is the required audience for App Store Server API JWT tokens
-	JWTAudience = "appstoreconnect-v1"
-)
 
 // TokenGenerator generates JWT tokens for App Store Server API authentication
 type TokenGenerator struct {
@@ -76,28 +63,24 @@ type TokenGenerator struct {
 }
 
 // NewTokenGenerator creates a new JWT token generator
-func NewTokenGenerator(signingKey *ecdsa.PrivateKey, keyID, issuerID, bundleID string) *TokenGenerator {
-	return &TokenGenerator{
-		signingKey: signingKey,
-		keyID:      keyID,
-		issuerID:   issuerID,
-		bundleID:   bundleID,
+func NewTokenGenerator(config *ClientConfig) (*TokenGenerator, error) {
+	privateKey, err := ParsePrivateKeyFromPEM(config.PrivateKey)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse private key: %w", err)
 	}
+	return &TokenGenerator{
+		signingKey: privateKey,
+		keyID:      config.KeyID,
+		issuerID:   config.IssuerID,
+		bundleID:   config.BundleID,
+	}, nil
 }
 
 // GenerateToken creates a new JWT token for API authentication
 func (t *TokenGenerator) GenerateToken() (string, error) {
-	now := time.Now()
-	claims := &Claims{
-		Issuer:         t.issuerID,
-		IssuedAt:       now.Unix(),
-		ExpirationTime: now.Add(5 * time.Minute).Unix(), // Token expires in 5 minutes
-		Audience:       JWTAudience,
-		BundleID:       t.bundleID,
-	}
-
+	claims := NewClaims(t.issuerID, t.bundleID)
 	token := jwt.NewWithClaims(jwt.SigningMethodES256, claims)
-	token.Header = NewJWTHeader(t.keyID)
+	token.Header["kid"] = t.keyID
 
 	tokenString, err := token.SignedString(t.signingKey)
 	if err != nil {

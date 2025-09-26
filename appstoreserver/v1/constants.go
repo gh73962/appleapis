@@ -38,6 +38,19 @@ func (e Environment) IsValid() bool {
 	}
 }
 
+func (e Environment) BaseURL() string {
+	switch e {
+	case EnvironmentProduction:
+		return ProductionBaseURL
+	case EnvironmentSandbox:
+		return SandboxBaseURL
+	case EnvironmentLocalTesting:
+		return LocalTestingBaseURL
+	default:
+		return ""
+	}
+}
+
 // VerificationStatus represents the status of verification
 type VerificationStatus int
 
@@ -326,4 +339,17 @@ const (
 	RefundPreferenceGrant        RefundPreference = 1 // You prefer that Apple grants the refund
 	RefundPreferenceDecline      RefundPreference = 2 // You prefer that Apple declines the refund
 	RefundPreferenceNoPreference RefundPreference = 3 // You have no preference whether Apple grants or declines the refund
+)
+
+// OfferDiscountType indicates the payment mode for subscription offers on an auto-renewable subscription.
+// See https://developer.apple.com/documentation/appstoreserverapi/offerdiscounttype
+type OfferDiscountType string
+
+const (
+	// OfferDiscountTypeFreeTrial indicates a free trial payment mode
+	OfferDiscountTypeFreeTrial OfferDiscountType = "FREE_TRIAL"
+	// OfferDiscountTypePayAsYouGo indicates customers pay over single or multiple billing periods
+	OfferDiscountTypePayAsYouGo OfferDiscountType = "PAY_AS_YOU_GO"
+	// OfferDiscountTypePayUpFront indicates customers pay up front
+	OfferDiscountTypePayUpFront OfferDiscountType = "PAY_UP_FRONT"
 )

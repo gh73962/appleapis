@@ -1,13 +1,11 @@
 package appstoreserver
 
 import (
-	"fmt"
-	"io"
 	"net/http"
 	"time"
 )
 
-// client represents the App Store Server API client
+// client provides a high-level interface to the App Store Server API and JWS verification
 type client struct {
 	baseURL        string
 	tokenGenerator *TokenGenerator
@@ -16,43 +14,9 @@ type client struct {
 	verifier       *SignedDataVerifier
 }
 
-// newClient creates a new App Store Server API client
-func newClient(environment Environment, tokenGenerator *TokenGenerator, httpClient *http.Client) (*client, error) {
-	var baseURL string
-	switch environment {
-	case EnvironmentProduction:
-		baseURL = ProductionBaseURL
-	case EnvironmentSandbox:
-		baseURL = SandboxBaseURL
-	case EnvironmentLocalTesting:
-		baseURL = LocalTestingBaseURL
-	default:
-		return nil, fmt.Errorf("invalid environment: %s", environment)
-	}
-
-	if httpClient == nil {
-		httpClient = &http.Client{
-			Timeout: 5 * time.Second,
-		}
-	}
-
-	return &client{
-		baseURL:        baseURL,
-		tokenGenerator: tokenGenerator,
-		httpClient:     httpClient,
-		userAgent:      "app-store-server-library/go/1.0.0",
-	}, nil
-}
-
-// Client provides a high-level interface to the App Store Server API and JWS verification
-type Client struct {
-	*client
-}
-
 // New creates a new App Store Server instance using the option pattern
-func New(options ...ClientOption) (*Client, error) {
+func New(options ...ClientOption) (*client, error) {
 	config := new(ClientConfig)
-
 	for _, option := range options {
 		option(config)
 	}
@@ -60,72 +24,34 @@ func New(options ...ClientOption) (*Client, error) {
 	if err := config.Validate(); err != nil {
 		return nil, err
 	}
-
-	privateKey, err := ParsePrivateKeyFromPEM(config.PrivateKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse private key: %w", err)
+	if err := config.Init(); err != nil {
+		return nil, err
 	}
 
-	tokenGenerator := NewTokenGenerator(privateKey, config.KeyID, config.IssuerID, config.BundleID)
-
-	client, err := newClient(config.Environment, tokenGenerator, config.HTTPClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create API client: %w", err)
+	c := client{
+		baseURL:   config.Environment.BaseURL(),
+		userAgent: "app-store-server-library/go/1.0.0",
 	}
 
-	var rootCerts [][]byte
-	// If no root certificates provided, use Apple's default root certificates
-	if len(config.RootCertificates) == 0 {
-		for _, v := range []string{AppleRootCAURL, AppleRootCAG2URL, AppleRootCAG3URL} {
-			resp, err := http.Get(v)
-			if err != nil {
-				return nil, fmt.Errorf("failed to download %s: %w", v, err)
-			}
-			defer resp.Body.Close()
+	tokenGenerator, err := NewTokenGenerator(config)
+	if err != nil {
+		return nil, err
+	}
+	c.tokenGenerator = tokenGenerator
 
-			if resp.StatusCode != http.StatusOK {
-				return nil, fmt.Errorf("failed to download %s: HTTP %d", v, resp.StatusCode)
-			}
-
-			for _, v := range []string{AppleRootCAURL, AppleRootCAG2URL, AppleRootCAG3URL} {
-				resp, err := http.Get(v)
-				if err != nil {
-					return nil, fmt.Errorf("failed to download %s: %w", v, err)
-				}
-				defer resp.Body.Close()
-
-				if resp.StatusCode != http.StatusOK {
-					return nil, fmt.Errorf("failed to download %s: HTTP %d", v, resp.StatusCode)
-				}
-
-				// 修改：使用io.ReadAll替代手动缓冲读取
-				certData, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return nil, fmt.Errorf("failed to read certificate data from %s: %w", v, err)
-				}
-
-				rootCerts = append(rootCerts, certData)
-			}
-
+	if config.HTTPClient == nil {
+		c.httpClient = &http.Client{
+			Timeout: 5 * time.Second,
 		}
-
 	} else {
-		rootCerts = config.RootCertificates
+		c.httpClient = config.HTTPClient
 	}
 
-	verifier, err := NewSignedDataVerifier(
-		rootCerts,
-		config.EnableOnlineChecks,
-		config.Environment,
-		config.BundleID,
-		config.AppAppleID,
-	)
+	verifier, err := NewSignedDataVerifier(config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create verifier: %w", err)
+		return nil, err
 	}
+	c.verifier = verifier
 
-	client.verifier = verifier
-	return &Client{
-		client: client,
-	}, nil
+	return &c, nil
 }

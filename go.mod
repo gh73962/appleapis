@@ -4,7 +4,7 @@ go 1.24.0
 
 toolchain go1.24.6
 
-require github.com/golang-jwt/jwt/v5 v5.0.0
+require github.com/golang-jwt/jwt/v5 v5.3.0
 
 require (
 	github.com/maypok86/otter/v2 v2.2.1

@@ -12,101 +12,136 @@ import (
 // JWSTransactionDecodedPayload contains transaction information signed by the App Store.
 // See https://developer.apple.com/documentation/appstoreserverapi/jwstransactiondecodedpayload
 type JWSTransactionDecodedPayload struct {
-	AppAccountToken             *string                `json:"appAccountToken,omitempty"`
-	BundleID                    string                 `json:"bundleId"`
-	Environment                 Environment            `json:"environment"`
-	ExpiresDate                 *int64                 `json:"expiresDate,omitempty"`
-	InAppOwnershipType          InAppOwnershipType     `json:"inAppOwnershipType"`
-	IsUpgraded                  *bool                  `json:"isUpgraded,omitempty"`
-	OfferIdentifier             *string                `json:"offerIdentifier,omitempty"`
-	OfferType                   *SubscriptionOfferType `json:"offerType,omitempty"`
-	OriginalPurchaseDate        int64                  `json:"originalPurchaseDate"`
-	OriginalTransactionID       string                 `json:"originalTransactionId"`
-	ProductID                   string                 `json:"productId"`
-	PurchaseDate                int64                  `json:"purchaseDate"`
-	Quantity                    int                    `json:"quantity"`
-	RevocationDate              *int64                 `json:"revocationDate,omitempty"`
-	RevocationReason            *RevocationReason      `json:"revocationReason,omitempty"`
-	SignedDate                  int64                  `json:"signedDate"`
-	SubscriptionGroupIdentifier *string                `json:"subscriptionGroupIdentifier,omitempty"`
-	TransactionID               string                 `json:"transactionId"`
-	TransactionReason           *TransactionReason     `json:"transactionReason,omitempty"`
-	Type                        ProductType            `json:"type"`
-	WebOrderLineItemID          *string                `json:"webOrderLineItemId,omitempty"`
+	AppAccountToken             string                `json:"appAccountToken"`
+	AppTransactionID            string                `json:"appTransactionId"`
+	BundleID                    string                `json:"bundleId"`
+	Currency                    string                `json:"currency"`
+	Environment                 Environment           `json:"environment"`
+	ExpiresDate                 int64                 `json:"expiresDate"`
+	InAppOwnershipType          InAppOwnershipType    `json:"inAppOwnershipType"`
+	IsUpgraded                  bool                  `json:"isUpgraded"`
+	OfferDiscountType           OfferDiscountType     `json:"offerDiscountType"`
+	OfferIdentifier             string                `json:"offerIdentifier"`
+	OfferPeriod                 string                `json:"offerPeriod"`
+	OfferType                   SubscriptionOfferType `json:"offerType"`
+	OriginalPurchaseDate        int64                 `json:"originalPurchaseDate"`
+	OriginalTransactionID       string                `json:"originalTransactionId"`
+	Price                       int64                 `json:"price"`
+	ProductID                   string                `json:"productId"`
+	PurchaseDate                int64                 `json:"purchaseDate"`
+	Quantity                    int                   `json:"quantity"`
+	RevocationDate              int64                 `json:"revocationDate"`
+	RevocationReason            *RevocationReason     `json:"revocationReason"`
+	SignedDate                  int64                 `json:"signedDate"`
+	Storefront                  string                `json:"storefront"`
+	StorefrontID                string                `json:"storefrontId"`
+	SubscriptionGroupIdentifier string                `json:"subscriptionGroupIdentifier"`
+	TransactionID               string                `json:"transactionId"`
+	TransactionReason           TransactionReason     `json:"transactionReason"`
+	Type                        ProductType           `json:"type"`
+	WebOrderLineItemID          string                `json:"webOrderLineItemId"`
+	AdvancedCommerceInfo        AdvancedCommerceInfo  `json:"advancedCommerceInfo"`
 }
 
 // GetExpiresDate returns the expiration date as a time.Time
-func (t *JWSTransactionDecodedPayload) GetExpiresDate() *time.Time {
-	if t.ExpiresDate == nil {
-		return nil
-	}
-	timestamp := time.Unix(*t.ExpiresDate/1000, 0)
-	return &timestamp
+func (t *JWSTransactionDecodedPayload) GetExpiresDate() time.Time {
+	return time.UnixMilli(t.ExpiresDate)
 }
 
 // GetOriginalPurchaseDate returns the original purchase date as a time.Time
 func (t *JWSTransactionDecodedPayload) GetOriginalPurchaseDate() time.Time {
-	return time.Unix(t.OriginalPurchaseDate/1000, 0)
+	return time.UnixMilli(t.OriginalPurchaseDate)
 }
 
 // GetPurchaseDate returns the purchase date as a time.Time
 func (t *JWSTransactionDecodedPayload) GetPurchaseDate() time.Time {
-	return time.Unix(t.PurchaseDate/1000, 0)
+	return time.UnixMilli(t.PurchaseDate)
 }
 
 // GetRevocationDate returns the revocation date as a time.Time
-func (t *JWSTransactionDecodedPayload) GetRevocationDate() *time.Time {
-	if t.RevocationDate == nil {
-		return nil
-	}
-	timestamp := time.Unix(*t.RevocationDate/1000, 0)
-	return &timestamp
+func (t *JWSTransactionDecodedPayload) GetRevocationDate() time.Time {
+	return time.UnixMilli(t.RevocationDate)
 }
 
 // GetSignedDate returns the signed date as a time.Time
 func (t *JWSTransactionDecodedPayload) GetSignedDate() time.Time {
-	return time.Unix(t.SignedDate/1000, 0)
+	return time.UnixMilli(t.SignedDate)
 }
 
 // JWSRenewalInfoDecodedPayload contains subscription renewal information signed by the App Store.
 // See https://developer.apple.com/documentation/appstoreserverapi/jwsrenewalinfodecodedpayload
 type JWSRenewalInfoDecodedPayload struct {
-	AutoRenewProductID          *string                `json:"autoRenewProductId,omitempty"`
-	AutoRenewStatus             AutoRenewStatus        `json:"autoRenewStatus"`
-	Environment                 Environment            `json:"environment"`
-	ExpirationIntent            *ExpirationIntent      `json:"expirationIntent,omitempty"`
-	GracePeriodExpiresDate      *int64                 `json:"gracePeriodExpiresDate,omitempty"`
-	IsInBillingRetryPeriod      *bool                  `json:"isInBillingRetryPeriod,omitempty"`
-	OfferIdentifier             *string                `json:"offerIdentifier,omitempty"`
-	OfferType                   *SubscriptionOfferType `json:"offerType,omitempty"`
-	OriginalTransactionID       string                 `json:"originalTransactionId"`
-	PriceIncreaseStatus         *int                   `json:"priceIncreaseStatus,omitempty"`
-	ProductID                   string                 `json:"productId"`
-	RecentSubscriptionStartDate *int64                 `json:"recentSubscriptionStartDate,omitempty"`
-	SignedDate                  int64                  `json:"signedDate"`
+	AppAccountToken             string                `json:"appAccountToken"`
+	AppTransactionID            string                `json:"appTransactionId"`
+	AutoRenewProductID          string                `json:"autoRenewProductId"`
+	AutoRenewStatus             AutoRenewStatus       `json:"autoRenewStatus"`
+	Currency                    string                `json:"currency"`
+	EligibleWinBackOfferIDs     []string              `json:"eligibleWinBackOfferIds"`
+	Environment                 Environment           `json:"environment"`
+	ExpirationIntent            ExpirationIntent      `json:"expirationIntent"`
+	GracePeriodExpiresDate      int64                 `json:"gracePeriodExpiresDate"`
+	IsInBillingRetryPeriod      bool                  `json:"isInBillingRetryPeriod"`
+	OfferDiscountType           OfferDiscountType     `json:"offerDiscountType"`
+	OfferIdentifier             string                `json:"offerIdentifier"`
+	OfferPeriod                 string                `json:"offerPeriod"`
+	OfferType                   SubscriptionOfferType `json:"offerType"`
+	OriginalTransactionID       string                `json:"originalTransactionId"`
+	PriceIncreaseStatus         int                   `json:"priceIncreaseStatus"`
+	ProductID                   string                `json:"productId"`
+	RecentSubscriptionStartDate int64                 `json:"recentSubscriptionStartDate"`
+	RenewalDate                 int64                 `json:"renewalDate"`
+	RenewalPrice                int64                 `json:"renewalPrice"`
+	SignedDate                  int64                 `json:"signedDate"`
+	AdvancedCommerceInfo        AdvancedCommerceInfo  `json:"advancedCommerceInfo"`
+}
+
+// AdvancedCommerceInfo Renewal information that is present only for Advanced Commerce SKUs.
+// See https://developer.apple.com/documentation/appstoreserverapi/advancedcommercerenewalinfo
+type AdvancedCommerceInfo struct {
+	ConsistencyToken   string                        `json:"consistencyToken"`
+	Descriptors        AdvancedCommerceDescriptors   `json:"descriptors"`
+	Items              []AdvancedCommerceRenewalItem `json:"items"`
+	Period             string                        `json:"period"`
+	RequestReferenceID string                        `json:"requestReferenceId"`
+	TaxCode            string                        `json:"taxCode"`
+}
+
+// AdvancedCommerceDescriptors see https://developer.apple.com/documentation/appstoreserverapi/advancedcommercedescriptors
+type AdvancedCommerceDescriptors struct {
+	Description string `json:"description"`
+	DisplayName string `json:"displayName"`
+}
+
+// AdvancedCommerceRenewalItem see https://developer.apple.com/documentation/appstoreserverapi/advancedcommercerenewalitem
+type AdvancedCommerceRenewalItem struct {
+	SKU         string                `json:"SKU"`
+	Description string                `json:"description"`
+	DisplayName string                `json:"displayName"`
+	Offer       AdvancedCommerceOffer `json:"offer"`
+	Price       int64                 `json:"price"`
+}
+
+// AdvancedCommerceOffer see https://developer.apple.com/documentation/appstoreserverapi/advancedcommerceoffer
+type AdvancedCommerceOffer struct {
+	Period      string `json:"period"`
+	PeriodCount int    `json:"periodCount"`
+	Price       int64  `json:"price"`
+	Reason      string `json:"reason"`
 }
 
 // GetGracePeriodExpiresDate returns the grace period expiration date as a time.Time
-func (r *JWSRenewalInfoDecodedPayload) GetGracePeriodExpiresDate() *time.Time {
-	if r.GracePeriodExpiresDate == nil {
-		return nil
-	}
-	timestamp := time.Unix(*r.GracePeriodExpiresDate/1000, 0)
-	return &timestamp
+func (r *JWSRenewalInfoDecodedPayload) GetGracePeriodExpiresDate() time.Time {
+	return time.UnixMilli(r.GracePeriodExpiresDate)
 }
 
 // GetRecentSubscriptionStartDate returns the recent subscription start date as a time.Time
-func (r *JWSRenewalInfoDecodedPayload) GetRecentSubscriptionStartDate() *time.Time {
-	if r.RecentSubscriptionStartDate == nil {
-		return nil
-	}
-	timestamp := time.Unix(*r.RecentSubscriptionStartDate/1000, 0)
-	return &timestamp
+func (r *JWSRenewalInfoDecodedPayload) GetRecentSubscriptionStartDate() time.Time {
+	return time.UnixMilli(r.RecentSubscriptionStartDate)
 }
 
 // GetSignedDate returns the signed date as a time.Time
 func (r *JWSRenewalInfoDecodedPayload) GetSignedDate() time.Time {
-	return time.Unix(r.SignedDate/1000, 0)
+	return time.UnixMilli(r.SignedDate)
 }
 
 // ConsumptionRequest contains consumption information for a transaction.
@@ -305,101 +340,101 @@ type TransactionInfoResponse struct {
 // HistoryResponse contains the customer's transaction history for an app.
 // See https://developer.apple.com/documentation/appstoreserverapi/historyresponse
 type HistoryResponse struct {
-	Revision           string                          `json:"revision,omitempty"`
-	HasMore            bool                            `json:"hasMore,omitempty"`
-	BundleID           string                          `json:"bundleId,omitempty"`
-	AppAppleID         int                             `json:"appAppleId,omitempty"`
-	Environment        Environment                     `json:"environment,omitempty"`
-	SignedTransactions []string                        `json:"signedTransactions,omitempty"`
+	Revision           string                          `json:"revision"`
+	HasMore            bool                            `json:"hasMore"`
+	BundleID           string                          `json:"bundleId"`
+	AppAppleID         int                             `json:"appAppleId"`
+	Environment        Environment                     `json:"environment"`
+	SignedTransactions []string                        `json:"signedTransactions"`
 	Payloads           []*JWSTransactionDecodedPayload `json:"-"`
 }
 
 // OrderLookupResponse includes the order lookup status and an array of signed transactions for the in-app purchases in the order.
 // See https://developer.apple.com/documentation/appstoreserverapi/orderlookupresponse
 type OrderLookupResponse struct {
-	Status             OrderLookupStatus               `json:"status,omitempty"`
-	SignedTransactions []string                        `json:"signedTransactions,omitempty"`
+	Status             OrderLookupStatus               `json:"status"`
+	SignedTransactions []string                        `json:"signedTransactions"`
 	Payloads           []*JWSTransactionDecodedPayload `json:"-"`
 }
 
 // RefundHistoryResponse contains an array of signed JSON Web Signature (JWS) refunded transactions, and paging information.
 // See https://developer.apple.com/documentation/appstoreserverapi/refundhistoryresponse
 type RefundHistoryResponse struct {
-	SignedTransactions []string                        `json:"signedTransactions,omitempty"`
-	Revision           string                          `json:"revision,omitempty"`
-	HasMore            bool                            `json:"hasMore,omitempty"`
+	SignedTransactions []string                        `json:"signedTransactions"`
+	Revision           string                          `json:"revision"`
+	HasMore            bool                            `json:"hasMore"`
 	Payloads           []*JWSTransactionDecodedPayload `json:"-"`
 }
 
 // ExtendRenewalDateResponse indicates whether an individual renewal-date extension succeeded, and related details.
 // See https://developer.apple.com/documentation/appstoreserverapi/extendrenewaldateresponse
 type ExtendRenewalDateResponse struct {
-	OriginalTransactionID string `json:"originalTransactionId,omitempty"`
-	WebOrderLineItemID    string `json:"webOrderLineItemId,omitempty"`
-	Success               bool   `json:"success,omitempty"`
-	EffectiveDate         int64  `json:"effectiveDate,omitempty"`
+	OriginalTransactionID string `json:"originalTransactionId"`
+	WebOrderLineItemID    string `json:"webOrderLineItemId"`
+	Success               bool   `json:"success"`
+	EffectiveDate         int64  `json:"effectiveDate"`
 }
 
 // MassExtendRenewalDateResponse indicates the server successfully received the subscription-renewal-date extension request.
 // See https://developer.apple.com/documentation/appstoreserverapi/massextendrenewaldateresponse
 type MassExtendRenewalDateResponse struct {
-	RequestIdentifier string `json:"requestIdentifier,omitempty"`
+	RequestIdentifier string `json:"requestIdentifier"`
 }
 
 // MassExtendRenewalDateStatusResponse indicates the current status of a request to extend the subscription renewal date to all eligible subscribers.
 // See https://developer.apple.com/documentation/appstoreserverapi/massextendrenewaldatestatusresponse
 type MassExtendRenewalDateStatusResponse struct {
-	RequestIdentifier string `json:"requestIdentifier,omitempty"`
-	Complete          bool   `json:"complete,omitempty"`
-	CompleteDate      int64  `json:"completeDate,omitempty"`
-	SucceededCount    int    `json:"succeededCount,omitempty"`
-	FailedCount       int    `json:"failedCount,omitempty"`
+	RequestIdentifier string `json:"requestIdentifier"`
+	Complete          bool   `json:"complete"`
+	CompleteDate      int64  `json:"completeDate"`
+	SucceededCount    int    `json:"succeededCount"`
+	FailedCount       int    `json:"failedCount"`
 }
 
 // SendAttemptItem contains the success or error information and the date the App Store server records when it attempts to send a server notification to your server.
 // See https://developer.apple.com/documentation/appstoreserverapi/sendattemptitem
 type SendAttemptItem struct {
-	AttemptDate       int64             `json:"attemptDate,omitempty"`
-	SendAttemptResult SendAttemptResult `json:"sendAttemptResult,omitempty"`
+	AttemptDate       int64             `json:"attemptDate"`
+	SendAttemptResult SendAttemptResult `json:"sendAttemptResult"`
 }
 
 // NotificationHistoryResponseItem contains the App Store server notification history record, including the signed notification payload and the result of the server's first send attempt.
 // See https://developer.apple.com/documentation/appstoreserverapi/notificationhistoryresponseitem
 type NotificationHistoryResponseItem struct {
-	SignedPayload string                                                    `json:"signedPayload,omitempty"`
-	SendAttempts  []SendAttemptItem                                         `json:"sendAttempts,omitempty"`
-	Payload       *appstoreservernotifications.ResponseBodyV2DecodedPayload `json:"-"`
+	SignedPayload string                                      `json:"signedPayload"`
+	SendAttempts  []SendAttemptItem                           `json:"sendAttempts"`
+	Payload       *appstoreservernotifications.DecodedPayload `json:"-"`
 }
 
 // NotificationHistoryResponse contains the App Store Server Notifications history for your app.
 // See https://developer.apple.com/documentation/appstoreserverapi/notificationhistoryresponse
 type NotificationHistoryResponse struct {
-	PaginationToken     string                            `json:"paginationToken,omitempty"`
-	HasMore             bool                              `json:"hasMore,omitempty"`
-	NotificationHistory []NotificationHistoryResponseItem `json:"notificationHistory,omitempty"`
+	PaginationToken     string                            `json:"paginationToken"`
+	HasMore             bool                              `json:"hasMore"`
+	NotificationHistory []NotificationHistoryResponseItem `json:"notificationHistory"`
 }
 
 // SendTestNotificationResponse contains the test notification token.
 // See https://developer.apple.com/documentation/appstoreserverapi/sendtestnotificationresponse
 type SendTestNotificationResponse struct {
-	TestNotificationToken string `json:"testNotificationToken,omitempty"`
+	TestNotificationToken string `json:"testNotificationToken"`
 }
 
 // CheckTestNotificationResponse contains the contents of the test notification sent by the App Store server and the result from your server.
 // See https://developer.apple.com/documentation/appstoreserverapi/checktestnotificationresponse
 type CheckTestNotificationResponse struct {
-	SignedPayload string                                                    `json:"signedPayload,omitempty"`
-	SendAttempts  []SendAttemptItem                                         `json:"sendAttempts,omitempty"`
-	Payload       *appstoreservernotifications.ResponseBodyV2DecodedPayload `json:"-"`
+	SignedPayload string                                      `json:"signedPayload"`
+	SendAttempts  []SendAttemptItem                           `json:"sendAttempts"`
+	Payload       *appstoreservernotifications.DecodedPayload `json:"-"`
 }
 
 // LastTransactionsItem contains the most recent App Store-signed transaction information and App Store-signed renewal information for an auto-renewable subscription.
 // See https://developer.apple.com/documentation/appstoreserverapi/lasttransactionsitem
 type LastTransactionsItem struct {
-	Status                SubscriptionStatus            `json:"status,omitempty"`
-	OriginalTransactionID string                        `json:"originalTransactionId,omitempty"`
-	SignedTransactionInfo string                        `json:"signedTransactionInfo,omitempty"`
-	SignedRenewalInfo     string                        `json:"signedRenewalInfo,omitempty"`
+	Status                SubscriptionStatus            `json:"status"`
+	OriginalTransactionID string                        `json:"originalTransactionId"`
+	SignedTransactionInfo string                        `json:"signedTransactionInfo"`
+	SignedRenewalInfo     string                        `json:"signedRenewalInfo"`
 	RenewalPayload        *JWSRenewalInfoDecodedPayload `json:"-"`
 	TransactionPayload    *JWSTransactionDecodedPayload `json:"-"`
 }
@@ -407,15 +442,15 @@ type LastTransactionsItem struct {
 // SubscriptionGroupIdentifierItem contains information for auto-renewable subscriptions, including signed transaction information and signed renewal information, for one subscription group.
 // See https://developer.apple.com/documentation/appstoreserverapi/subscriptiongroupidentifieritem
 type SubscriptionGroupIdentifierItem struct {
-	SubscriptionGroupIdentifier string                 `json:"subscriptionGroupIdentifier,omitempty"`
-	LastTransactions            []LastTransactionsItem `json:"lastTransactions,omitempty"`
+	SubscriptionGroupIdentifier string                 `json:"subscriptionGroupIdentifier"`
+	LastTransactions            []LastTransactionsItem `json:"lastTransactions"`
 }
 
 // StatusResponse contains status information for all of a customer's auto-renewable subscriptions in your app.
 // See https://developer.apple.com/documentation/appstoreserverapi/statusresponse
 type StatusResponse struct {
-	Environment Environment                       `json:"environment,omitempty"`
-	BundleID    string                            `json:"bundleId,omitempty"`
-	AppAppleID  int64                             `json:"appAppleId,omitempty"`
-	Data        []SubscriptionGroupIdentifierItem `json:"data,omitempty"`
+	Environment Environment                       `json:"environment"`
+	BundleID    string                            `json:"bundleId"`
+	AppAppleID  int64                             `json:"appAppleId"`
+	Data        []SubscriptionGroupIdentifierItem `json:"data"`
 }

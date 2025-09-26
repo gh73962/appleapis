@@ -315,18 +315,19 @@ type SignedDataVerifier struct {
 }
 
 // NewSignedDataVerifier creates a new SignedDataVerifier instance
-func NewSignedDataVerifier(rootCertificates [][]byte, enableOnlineChecks bool, environment Environment, bundleID string, appAppleID int64) (*SignedDataVerifier, error) {
-	if environment == EnvironmentProduction && appAppleID == 0 {
+func NewSignedDataVerifier(config *ClientConfig) (*SignedDataVerifier, error) {
+	if config.Environment == EnvironmentProduction && config.AppAppleID == 0 {
 		return nil, errors.New("appAppleID is required when the environment is Production")
 	}
 
 	return &SignedDataVerifier{
-		rootCertificates:   rootCertificates,
-		environment:        environment,
-		bundleID:           bundleID,
-		appAppleID:         appAppleID,
-		chainVerifier:      newChainVerifier(rootCertificates),
-		enableOnlineChecks: enableOnlineChecks,
+		rootCertificates:   config.RootCertificates,
+		environment:        config.Environment,
+		bundleID:           config.BundleID,
+		appAppleID:         config.AppAppleID,
+		chainVerifier:      newChainVerifier(config.RootCertificates),
+		enableOnlineChecks: config.EnableOnlineChecks,
+		enableAutoDecode:   config.EnableAutoDecode,
 	}, nil
 }
 
@@ -373,13 +374,13 @@ func (v *SignedDataVerifier) VerifyAndDecodeSignedTransaction(signedTransaction 
 }
 
 // VerifyAndDecodeNotification verifies and decodes an App Store Server Notification signedPayload
-func (v *SignedDataVerifier) VerifyAndDecodeNotification(signedPayload string) (*appstoreservernotifications.ResponseBodyV2DecodedPayload, error) {
+func (v *SignedDataVerifier) VerifyAndDecodeNotification(signedPayload string) (*appstoreservernotifications.DecodedPayload, error) {
 	decodedPayload, err := v.decodeSignedObject(signedPayload)
 	if err != nil {
 		return nil, err
 	}
 
-	var notification appstoreservernotifications.ResponseBodyV2DecodedPayload
+	var notification appstoreservernotifications.DecodedPayload
 	if err := json.Unmarshal(decodedPayload, &notification); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal notification payload: %w", err)
 	}

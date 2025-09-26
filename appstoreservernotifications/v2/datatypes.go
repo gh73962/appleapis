@@ -1,8 +1,16 @@
 package appstoreservernotifications
 
-// ResponseBodyV2DecodedPayload contains the version 2 notification data.
+import "time"
+
+// ResponseBody contains the version 2 notification data.
+// See https://developer.apple.com/documentation/appstoreservernotifications/responsebodyv2
+type ResponseBody struct {
+	SignedPayload string `json:"signedPayload"`
+}
+
+// DecodedPayload contains the version 2 notification data.
 // See https://developer.apple.com/documentation/appstoreservernotifications/responsebodyv2decodedpayload
-type ResponseBodyV2DecodedPayload struct {
+type DecodedPayload struct {
 	NotificationType      NotificationType       `json:"notificationType,omitempty"`
 	Subtype               Subtype                `json:"subtype,omitempty"`
 	NotificationUUID      string                 `json:"notificationUUID,omitempty"`
@@ -11,6 +19,10 @@ type ResponseBodyV2DecodedPayload struct {
 	SignedDate            int64                  `json:"signedDate,omitempty"`
 	Summary               *Summary               `json:"summary,omitempty"`
 	ExternalPurchaseToken *ExternalPurchaseToken `json:"externalPurchaseToken,omitempty"`
+}
+
+func (d *DecodedPayload) GetSignedDate() time.Time {
+	return time.UnixMilli(d.SignedDate)
 }
 
 // Data contains the app metadata and signed renewal and transaction information.
@@ -50,6 +62,14 @@ func (d *Data) IsRevoked() bool {
 	return d.Status == 5
 }
 
+func (d *Data) IsSandbox() bool {
+	return d.Environment == "Sandbox"
+}
+
+func (d *Data) IsProduction() bool {
+	return d.Environment == "Production"
+}
+
 // Summary contains the summary data for subscription renewal date extension notifications.
 // See https://developer.apple.com/documentation/appstoreservernotifications/summary
 type Summary struct {
@@ -63,6 +83,14 @@ type Summary struct {
 	FailedCount            int64    `json:"failedCount,omitempty"`
 }
 
+func (s *Summary) IsSandbox() bool {
+	return s.Environment == "Sandbox"
+}
+
+func (s *Summary) IsProduction() bool {
+	return s.Environment == "Production"
+}
+
 // ExternalPurchaseToken contains external purchase token information.
 // See https://developer.apple.com/documentation/appstoreservernotifications/externalpurchasetoken
 type ExternalPurchaseToken struct {
@@ -72,4 +100,20 @@ type ExternalPurchaseToken struct {
 	BundleID            string `json:"bundleId,omitempty"`
 	TokenType           string `json:"tokenType,omitempty"`
 	TokenExpirationDate int64  `json:"tokenExpirationDate,omitempty"`
+}
+
+func (e *ExternalPurchaseToken) GetTokenCreationDate() time.Time {
+	return time.UnixMilli(e.TokenCreationDate)
+}
+
+func (e *ExternalPurchaseToken) GetTokenExpirationDate() time.Time {
+	return time.UnixMilli(e.TokenExpirationDate)
+}
+
+func (e *ExternalPurchaseToken) IsInitialAcquisition() bool {
+	return e.TokenType == "ACQUISITION"
+}
+
+func (e *ExternalPurchaseToken) IsServices() bool {
+	return e.TokenType == "SERVICES"
 }

@@ -34,10 +34,8 @@ func TestTransactionDecoding(t *testing.T) {
 	if decodedPayload.ProductID != "com.example.product" {
 		t.Fatalf("expected %q, got %q", "com.example.product", decodedPayload.ProductID)
 	}
-	if decodedPayload.SubscriptionGroupIdentifier != nil {
-		if *decodedPayload.SubscriptionGroupIdentifier != "55555" {
-			t.Fatalf("expected %q, got %q", "55555", *decodedPayload.SubscriptionGroupIdentifier)
-		}
+	if decodedPayload.SubscriptionGroupIdentifier != "55555" {
+		t.Fatalf("expected %q, got %q", "55555", decodedPayload.SubscriptionGroupIdentifier)
 	}
 	if decodedPayload.PurchaseDate != 1698148900000 {
 		t.Fatalf("expected %v, got %v", 1698148900000, decodedPayload.PurchaseDate)
@@ -45,57 +43,43 @@ func TestTransactionDecoding(t *testing.T) {
 	if decodedPayload.OriginalPurchaseDate != 1698148800000 {
 		t.Fatalf("expected %v, got %v", 1698148800000, decodedPayload.OriginalPurchaseDate)
 	}
-	if decodedPayload.ExpiresDate != nil {
-		if *decodedPayload.ExpiresDate != int64(1698149000000) {
-			t.Fatalf("expected %v, got %v", int64(1698149000000), *decodedPayload.ExpiresDate)
-		}
+	if decodedPayload.ExpiresDate != 1698149000000 {
+		t.Fatalf("expected %v, got %v", 1698149000000, decodedPayload.ExpiresDate)
 	}
 	if decodedPayload.Quantity != 1 {
 		t.Fatalf("expected %v, got %v", 1, decodedPayload.Quantity)
 	}
-	if string(decodedPayload.Type) != string(TypeAutoRenewableSubscription) {
-		t.Fatalf("expected %q, got %q", "Auto-Renewable Subscription", string(decodedPayload.Type))
+	if decodedPayload.Type != TypeAutoRenewableSubscription {
+		t.Fatalf("expected %q, got %q", TypeAutoRenewableSubscription, decodedPayload.Type)
 	}
-	if decodedPayload.AppAccountToken != nil {
-		if *decodedPayload.AppAccountToken != "7e3fb20b-4cdb-47cc-936d-99d65f608138" {
-			t.Fatalf("expected %q, got %q", "7e3fb20b-4cdb-47cc-936d-99d65f608138", *decodedPayload.AppAccountToken)
-		}
+	if decodedPayload.AppAccountToken != "7e3fb20b-4cdb-47cc-936d-99d65f608138" {
+		t.Fatalf("expected %q, got %q", "7e3fb20b-4cdb-47cc-936d-99d65f608138", decodedPayload.AppAccountToken)
 	}
-	if string(decodedPayload.InAppOwnershipType) != "PURCHASED" {
-		t.Fatalf("expected %q, got %q", "PURCHASED", string(decodedPayload.InAppOwnershipType))
+	if decodedPayload.InAppOwnershipType != InAppOwnershipTypePurchased {
+		t.Fatalf("expected %q, got %q", InAppOwnershipTypePurchased, decodedPayload.InAppOwnershipType)
 	}
-	if decodedPayload.SignedDate != int64(1698148900000) {
-		t.Fatalf("expected %v, got %v", int64(1698148900000), decodedPayload.SignedDate)
+	if decodedPayload.SignedDate != 1698148900000 {
+		t.Fatalf("expected %v, got %v", 1698148900000, decodedPayload.SignedDate)
 	}
-	if decodedPayload.RevocationDate != nil {
-		if *decodedPayload.RevocationDate != int64(1698148950000) {
-			t.Fatalf("expected %v, got %v", int64(1698148950000), *decodedPayload.RevocationDate)
-		}
+	if decodedPayload.RevocationDate != 1698148950000 {
+		t.Fatalf("expected %v, got %v", 1698148950000, decodedPayload.RevocationDate)
 	}
 	if decodedPayload.RevocationReason != nil {
 		if *decodedPayload.RevocationReason != RevocationReasonAppIssue {
 			t.Fatalf("expected %v, got %v", RevocationReasonAppIssue, *decodedPayload.RevocationReason)
 		}
 	}
-	if decodedPayload.IsUpgraded != nil {
-		if !*decodedPayload.IsUpgraded {
-			t.Fatal("expected true")
-		}
+	if !decodedPayload.IsUpgraded {
+		t.Fatal("expected true")
 	}
-	if decodedPayload.OfferType != nil {
-		if *decodedPayload.OfferType != OfferTypeIntroductory {
-			t.Fatalf("expected %v, got %v", OfferTypeIntroductory, *decodedPayload.OfferType)
-		}
+	if decodedPayload.OfferType != OfferTypeIntroductory {
+		t.Fatalf("expected %v, got %v", OfferTypeIntroductory, decodedPayload.OfferType)
 	}
-	if decodedPayload.OfferIdentifier != nil {
-		if *decodedPayload.OfferIdentifier != "abc.123" {
-			t.Fatalf("expected %q, got %q", "abc.123", *decodedPayload.OfferIdentifier)
-		}
+	if decodedPayload.OfferIdentifier != "abc.123" {
+		t.Fatalf("expected %q, got %q", "abc.123", decodedPayload.OfferIdentifier)
 	}
-	if decodedPayload.TransactionReason != nil {
-		if string(*decodedPayload.TransactionReason) != "PURCHASE" {
-			t.Fatalf("expected %q, got %q", "PURCHASE", string(*decodedPayload.TransactionReason))
-		}
+	if decodedPayload.TransactionReason != TransactionReasonPurchase {
+		t.Fatalf("expected %q, got %q", TransactionReasonPurchase, decodedPayload.TransactionReason)
 	}
 }
 
@@ -127,31 +111,23 @@ func TestRenewalInfoDecoding(t *testing.T) {
 	if decodedPayload.AutoRenewStatus != AutoRenewStatusOn {
 		t.Fatalf("expected %v, got %v", AutoRenewStatusOn, decodedPayload.AutoRenewStatus)
 	}
-	if decodedPayload.ExpirationIntent != nil {
-		if *decodedPayload.ExpirationIntent != ExpirationIntentCustomerCanceled {
-			t.Fatalf("expected %v, got %v", ExpirationIntentCustomerCanceled, *decodedPayload.ExpirationIntent)
-		}
+	if decodedPayload.ExpirationIntent != ExpirationIntentCustomerCanceled {
+		t.Fatalf("expected %v, got %v", ExpirationIntentCustomerCanceled, decodedPayload.ExpirationIntent)
 	}
-	if decodedPayload.SignedDate != int64(1698148800000) {
-		t.Fatalf("expected %v, got %v", int64(1698148800000), decodedPayload.SignedDate)
+	if decodedPayload.SignedDate != 1698148800000 {
+		t.Fatalf("expected %v, got %v", 1698148800000, decodedPayload.SignedDate)
 	}
-	if string(decodedPayload.Environment) != "LocalTesting" {
-		t.Fatalf("expected %q, got %q", "LocalTesting", string(decodedPayload.Environment))
+	if decodedPayload.Environment != EnvironmentLocalTesting {
+		t.Fatalf("expected %q, got %q", EnvironmentLocalTesting, decodedPayload.Environment)
 	}
-	if decodedPayload.RecentSubscriptionStartDate != nil {
-		if *decodedPayload.RecentSubscriptionStartDate != int64(1698148800000) {
-			t.Fatalf("expected %v, got %v", int64(1698148800000), *decodedPayload.RecentSubscriptionStartDate)
-		}
+	if decodedPayload.RecentSubscriptionStartDate != 1698148800000 {
+		t.Fatalf("expected %v, got %v", 1698148800000, decodedPayload.RecentSubscriptionStartDate)
 	}
-	if decodedPayload.OfferType != nil {
-		if *decodedPayload.OfferType != OfferTypePromotional {
-			t.Fatalf("expected %v, got %v", OfferTypePromotional, *decodedPayload.OfferType)
-		}
+	if decodedPayload.OfferType != OfferTypePromotional {
+		t.Fatalf("expected %v, got %v", OfferTypePromotional, decodedPayload.OfferType)
 	}
-	if decodedPayload.OfferIdentifier != nil {
-		if *decodedPayload.OfferIdentifier != "abc.123" {
-			t.Fatalf("expected %q, got %q", "abc.123", *decodedPayload.OfferIdentifier)
-		}
+	if decodedPayload.OfferIdentifier != "abc.123" {
+		t.Fatalf("expected %q, got %q", "abc.123", decodedPayload.OfferIdentifier)
 	}
 }
 
