@@ -8,10 +8,10 @@ import (
 // Client provides a high-level interface to the App Store Server API and JWS verification
 type Client struct {
 	baseURL        string
-	tokenGenerator *TokenGenerator
+	TokenGenerator *TokenGenerator
 	httpClient     *http.Client
 	userAgent      string
-	verifier       *SignedDataVerifier
+	Verifier       *SignedDataVerifier
 }
 
 // New creates a new App Store Server instance using the option pattern
@@ -37,7 +37,7 @@ func New(options ...Option) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.tokenGenerator = tokenGenerator
+	c.TokenGenerator = tokenGenerator
 
 	if config.HTTPClient == nil {
 		c.httpClient = &http.Client{
@@ -51,7 +51,7 @@ func New(options ...Option) (*Client, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.verifier = verifier
+	c.Verifier = verifier
 
 	return &c, nil
 }

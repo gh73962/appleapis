@@ -26,11 +26,11 @@ func (c *Client) GetTransactionHistory(ctx context.Context, req *TransactionHist
 		return nil, err
 	}
 
-	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+	if c.Verifier.environment == EnvironmentLocalTesting || !c.Verifier.enableAutoDecode {
 		return &response, nil
 	}
 	for _, v := range response.SignedTransactions {
-		payload, err := c.verifier.VerifyAndDecodeSignedTransaction(v)
+		payload, err := c.Verifier.VerifyAndDecodeSignedTransaction(v)
 		if err != nil {
 			return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", v, err)
 		}
@@ -54,11 +54,11 @@ func (c *Client) GetTransactionInfo(ctx context.Context, transactionID string) (
 		return nil, err
 	}
 
-	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+	if c.Verifier.environment == EnvironmentLocalTesting || !c.Verifier.enableAutoDecode {
 		return &response, nil
 	}
 
-	payload, err := c.verifier.VerifyAndDecodeSignedTransaction(response.SignedTransactionInfo)
+	payload, err := c.Verifier.VerifyAndDecodeSignedTransaction(response.SignedTransactionInfo)
 	if err != nil {
 		return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", response.SignedTransactionInfo, err)
 	}
@@ -88,18 +88,18 @@ func (c *Client) GetAllSubscriptionStatuses(ctx context.Context, transactionID s
 		return nil, err
 	}
 
-	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+	if c.Verifier.environment == EnvironmentLocalTesting || !c.Verifier.enableAutoDecode {
 		return &response, nil
 	}
 
 	for _, data := range response.Data {
 		for i, v := range data.LastTransactions {
-			renewalPayload, err := c.verifier.VerifyAndDecodeRenewalInfo(v.SignedRenewalInfo)
+			renewalPayload, err := c.Verifier.VerifyAndDecodeRenewalInfo(v.SignedRenewalInfo)
 			if err != nil {
 				return nil, fmt.Errorf("SignedRenewalInfo %s\nfailed to verify and decode: %w", v.SignedRenewalInfo, err)
 			}
 			data.LastTransactions[i].RenewalPayload = renewalPayload
-			transactionPayload, err := c.verifier.VerifyAndDecodeSignedTransaction(v.SignedTransactionInfo)
+			transactionPayload, err := c.Verifier.VerifyAndDecodeSignedTransaction(v.SignedTransactionInfo)
 			if err != nil {
 				return nil, fmt.Errorf("SignedTransactionInfo %s\nfailed to verify and decode: %w", v.SignedTransactionInfo, err)
 			}
@@ -146,12 +146,12 @@ func (c *Client) LookUpOrderID(ctx context.Context, orderID string) (*OrderLooku
 		return nil, err
 	}
 
-	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+	if c.Verifier.environment == EnvironmentLocalTesting || !c.Verifier.enableAutoDecode {
 		return &response, nil
 	}
 
 	for _, v := range response.SignedTransactions {
-		payload, err := c.verifier.VerifyAndDecodeSignedTransaction(v)
+		payload, err := c.Verifier.VerifyAndDecodeSignedTransaction(v)
 		if err != nil {
 			return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", v, err)
 		}
@@ -180,12 +180,12 @@ func (c *Client) GetRefundHistory(ctx context.Context, transactionID, revision s
 		return nil, err
 	}
 
-	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+	if c.Verifier.environment == EnvironmentLocalTesting || !c.Verifier.enableAutoDecode {
 		return &response, nil
 	}
 
 	for _, v := range response.SignedTransactions {
-		payload, err := c.verifier.VerifyAndDecodeSignedTransaction(v)
+		payload, err := c.Verifier.VerifyAndDecodeSignedTransaction(v)
 		if err != nil {
 			return nil, fmt.Errorf("SignedTransactions %s\nfailed to verify and decode: %w", v, err)
 		}
@@ -268,12 +268,12 @@ func (c *Client) GetNotificationHistory(ctx context.Context, req *NotificationHi
 		return nil, err
 	}
 
-	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+	if c.Verifier.environment == EnvironmentLocalTesting || !c.Verifier.enableAutoDecode {
 		return &response, nil
 	}
 
 	for i, v := range response.NotificationHistory {
-		payload, err := c.verifier.VerifyAndDecodeNotification(v.SignedPayload)
+		payload, err := c.Verifier.VerifyAndDecodeNotification(v.SignedPayload)
 		if err != nil {
 			return nil, fmt.Errorf("SignedPayload %s\nfailed to verify and decode: %w", v.SignedPayload, err)
 		}
@@ -310,11 +310,11 @@ func (c *Client) GetTestNotificationStatus(ctx context.Context, testNotification
 		return nil, err
 	}
 
-	if c.verifier.environment == EnvironmentLocalTesting || !c.verifier.enableAutoDecode {
+	if c.Verifier.environment == EnvironmentLocalTesting || !c.Verifier.enableAutoDecode {
 		return &response, nil
 	}
 
-	payload, err := c.verifier.VerifyAndDecodeNotification(response.SignedPayload)
+	payload, err := c.Verifier.VerifyAndDecodeNotification(response.SignedPayload)
 	if err != nil {
 		return nil, fmt.Errorf("SignedPayload %s\nfailed to verify and decode: %w", response.SignedPayload, err)
 	}
@@ -325,7 +325,7 @@ func (c *Client) GetTestNotificationStatus(ctx context.Context, testNotification
 
 // makereq performs an HTTP req to the App Store Server API
 func (c *Client) makeRequest(ctx context.Context, method, path string, queryParams url.Values, requestBody, responseBody any) error {
-	token, err := c.tokenGenerator.GenerateToken()
+	token, err := c.TokenGenerator.GenerateToken()
 	if err != nil {
 		return fmt.Errorf("failed to generate JWT token: %w", err)
 	}

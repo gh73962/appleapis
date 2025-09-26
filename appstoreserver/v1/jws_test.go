@@ -20,7 +20,7 @@ func TestTransactionDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decodedPayload, err := client.verifier.VerifyAndDecodeSignedTransaction(signedTransaction)
+	decodedPayload, err := client.Verifier.VerifyAndDecodeSignedTransaction(signedTransaction)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -94,7 +94,7 @@ func TestRenewalInfoDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decodedPayload, err := client.verifier.VerifyAndDecodeRenewalInfo(signedRenewalInfo)
+	decodedPayload, err := client.Verifier.VerifyAndDecodeRenewalInfo(signedRenewalInfo)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -142,7 +142,7 @@ func TestNotificationDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decodedPayload, err := client.verifier.VerifyAndDecodeNotification(signedNotification)
+	decodedPayload, err := client.Verifier.VerifyAndDecodeNotification(signedNotification)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestConsumptionRequestNotificationDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decodedPayload, err := client.verifier.VerifyAndDecodeNotification(signedNotification)
+	decodedPayload, err := client.Verifier.VerifyAndDecodeNotification(signedNotification)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestSummaryNotificationDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decodedPayload, err := client.verifier.VerifyAndDecodeNotification(signedNotification)
+	decodedPayload, err := client.Verifier.VerifyAndDecodeNotification(signedNotification)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -337,7 +337,7 @@ func TestAppStoreServerNotificationDecoding(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	decodedPayload, err := client.verifier.VerifyAndDecodeNotification(string(testNotification))
+	decodedPayload, err := client.Verifier.VerifyAndDecodeNotification(string(testNotification))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -360,7 +360,7 @@ func TestAppStoreServerNotificationDecodingProduction(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.verifier.VerifyAndDecodeNotification(string(testNotification))
+	_, err = client.Verifier.VerifyAndDecodeNotification(string(testNotification))
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
@@ -377,7 +377,7 @@ func TestMissingX5CHeader(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.verifier.VerifyAndDecodeNotification(string(data))
+	_, err = client.Verifier.VerifyAndDecodeNotification(string(data))
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
@@ -398,7 +398,7 @@ func TestWrongBundleIDForServerNotification(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.verifier.VerifyAndDecodeNotification(string(data))
+	_, err = client.Verifier.VerifyAndDecodeNotification(string(data))
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
@@ -418,7 +418,7 @@ func TestWrongAppAppleIDForServerNotification(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = client.verifier.VerifyAndDecodeNotification(string(data))
+	_, err = client.Verifier.VerifyAndDecodeNotification(string(data))
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
@@ -434,7 +434,7 @@ func TestMalformedJWTWithTooManyParts(t *testing.T) {
 	}
 
 	malformedJWT := "header.payload.signature.extra"
-	_, err = client.verifier.VerifyAndDecodeSignedTransaction(malformedJWT)
+	_, err = client.Verifier.VerifyAndDecodeSignedTransaction(malformedJWT)
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
@@ -452,7 +452,7 @@ func TestMalformedJWTWithMalformedData(t *testing.T) {
 
 	malformedJWT := "not.a.jwt"
 
-	_, err = client.verifier.VerifyAndDecodeSignedTransaction(malformedJWT)
+	_, err = client.Verifier.VerifyAndDecodeSignedTransaction(malformedJWT)
 	if err == nil {
 		t.Fatal("expected error but got nil")
 	}
