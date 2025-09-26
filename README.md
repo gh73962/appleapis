@@ -211,4 +211,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Related Projects
 
-- [app-store-server-library-python](./app-store-server-library-python/) - Official Python library from Apple
+- [app-store-server-library-python](https://github.com/apple/app-store-server-library-python) - Official Python library from Apple
