@@ -15,7 +15,7 @@ type client struct {
 }
 
 // New creates a new App Store Server instance using the option pattern
-func New(options ...ClientOption) (*client, error) {
+func New(options ...Option) (*client, error) {
 	config := new(ClientConfig)
 	for _, option := range options {
 		option(config)

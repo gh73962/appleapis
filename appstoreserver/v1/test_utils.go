@@ -40,7 +40,7 @@ func mockSignedData(filePath string) (string, error) {
 	return signedToken, nil
 }
 
-func mockTestClient(opts ...ClientOption) (*client, error) {
+func mockTestClient(opts ...Option) (*client, error) {
 	pk, err := os.ReadFile("../../testdata/certs/testSigningKey.p8")
 	if err != nil {
 		return nil, err
@@ -51,7 +51,7 @@ func mockTestClient(opts ...ClientOption) (*client, error) {
 		return nil, err
 	}
 
-	testOps := []ClientOption{
+	testOps := []Option{
 		WithAppAppleID(1234),
 		WithBundleID("com.example"),
 		WithEnvironment(EnvironmentLocalTesting),
@@ -79,7 +79,7 @@ func (m *mockTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return m.RoundTripFunc(req)
 }
 
-func mockClientWithBody(filePath string, statusCode int, opts ...ClientOption) (*client, error) {
+func mockClientWithBody(filePath string, statusCode int, opts ...Option) (*client, error) {
 	var (
 		responseBody []byte
 		err          error
