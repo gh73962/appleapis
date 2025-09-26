@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// client provides a high-level interface to the App Store Server API and JWS verification
-type client struct {
+// Client provides a high-level interface to the App Store Server API and JWS verification
+type Client struct {
 	baseURL        string
 	tokenGenerator *TokenGenerator
 	httpClient     *http.Client
@@ -15,7 +15,7 @@ type client struct {
 }
 
 // New creates a new App Store Server instance using the option pattern
-func New(options ...Option) (*client, error) {
+func New(options ...Option) (*Client, error) {
 	config := new(ClientConfig)
 	for _, option := range options {
 		option(config)
@@ -28,7 +28,7 @@ func New(options ...Option) (*client, error) {
 		return nil, err
 	}
 
-	c := client{
+	c := Client{
 		baseURL:   config.Environment.BaseURL(),
 		userAgent: "app-store-server-library/go/1.0.0",
 	}
