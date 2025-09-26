@@ -36,7 +36,7 @@ import (
 )
 
 func main() {
-   opts := []ClientOption{
+   opts := []Option{
 		WithAppAppleID(1234),
 		WithBundleID("com.example"),
 		WithEnvironment(EnvironmentProduction),
