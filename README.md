@@ -128,7 +128,7 @@ func handleNotification(w http.ResponseWriter, r *http.Request) {
         return
     }
 
-    decodedPayload, err := client.verifier.VerifyAndDecodeNotification(notification.SignedPayload)
+    decodedPayload, err := client.Verifier.VerifyAndDecodeNotification(notification.SignedPayload)
     if err != nil {
         http.Error(w, "VerifyAndDecodeNotification", http.StatusBadRequest)
         return

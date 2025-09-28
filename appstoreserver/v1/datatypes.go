@@ -40,7 +40,7 @@ type JWSTransactionDecodedPayload struct {
 	TransactionReason           TransactionReason     `json:"transactionReason"`
 	Type                        ProductType           `json:"type"`
 	WebOrderLineItemID          string                `json:"webOrderLineItemId,omitempty"`
-	AdvancedCommerceInfo        AdvancedCommerceInfo  `json:"advancedCommerceInfo,omitempty"`
+	AdvancedCommerceInfo        *AdvancedCommerceInfo `json:"advancedCommerceInfo,omitempty"`
 }
 
 // GetExpiresDate returns the expiration date as a time.Time
