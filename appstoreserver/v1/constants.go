@@ -200,32 +200,19 @@ const (
 	DeliveryStatusOtherReason    DeliveryStatus = 5
 )
 
-// LifetimeDollarsPurchased indicates the total amount, in USD, the customer has spent on in-app purchases.
+// LifetimeDollars indicates the total amount, in USD, the customer has spent/refund on in-app purchases.
 // See https://developer.apple.com/documentation/appstoreserverapi/lifetimedollarspurchased
-type LifetimeDollarsPurchased int
-
-const (
-	LifetimeDollarsPurchasedZero     LifetimeDollarsPurchased = 1
-	LifetimeDollarsPurchasedUpTo50   LifetimeDollarsPurchased = 2
-	LifetimeDollarsPurchasedUpTo100  LifetimeDollarsPurchased = 3
-	LifetimeDollarsPurchasedUpTo500  LifetimeDollarsPurchased = 4
-	LifetimeDollarsPurchasedUpTo1000 LifetimeDollarsPurchased = 5
-	LifetimeDollarsPurchasedUpTo2000 LifetimeDollarsPurchased = 6
-	LifetimeDollarsPurchasedOver2000 LifetimeDollarsPurchased = 7
-)
-
-// LifetimeDollarsRefunded indicates the total amount, in USD, the customer has received from refunded in-app purchases.
 // See https://developer.apple.com/documentation/appstoreserverapi/lifetimedollarsrefunded
-type LifetimeDollarsRefunded int
+type LifetimeDollars int
 
 const (
-	LifetimeDollarsRefundedZero     LifetimeDollarsRefunded = 1
-	LifetimeDollarsRefundedUpTo50   LifetimeDollarsRefunded = 2
-	LifetimeDollarsRefundedUpTo100  LifetimeDollarsRefunded = 3
-	LifetimeDollarsRefundedUpTo500  LifetimeDollarsRefunded = 4
-	LifetimeDollarsRefundedUpTo1000 LifetimeDollarsRefunded = 5
-	LifetimeDollarsRefundedUpTo2000 LifetimeDollarsRefunded = 6
-	LifetimeDollarsRefundedOver2000 LifetimeDollarsRefunded = 7
+	LifetimeDollarsZero     LifetimeDollars = 1
+	LifetimeDollarsUpTo50   LifetimeDollars = 2
+	LifetimeDollarsUpTo100  LifetimeDollars = 3
+	LifetimeDollarsUpTo500  LifetimeDollars = 4
+	LifetimeDollarsUpTo1000 LifetimeDollars = 5
+	LifetimeDollarsUpTo2000 LifetimeDollars = 6
+	LifetimeDollarsOver2000 LifetimeDollars = 7
 )
 
 // Platform indicates the platform where the customer used your app.

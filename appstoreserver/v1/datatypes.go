@@ -168,19 +168,19 @@ type AdvancedCommerceOffer struct {
 // ConsumptionRequest contains consumption information for a transaction.
 // See https://developer.apple.com/documentation/appstoreserverapi/consumptionrequest
 type ConsumptionRequest struct {
-	TransactionID            string                   `json:"-"`
-	AccountTenure            AccountTenure            `json:"accountTenure"`
-	AppAccountToken          string                   `json:"appAccountToken"`
-	ConsumptionStatus        ConsumptionStatus        `json:"consumptionStatus"`
-	CustomerConsented        bool                     `json:"customerConsented"`
-	DeliveryStatus           DeliveryStatus           `json:"deliveryStatus"`
-	LifetimeDollarsPurchased LifetimeDollarsPurchased `json:"lifetimeDollarsPurchased"`
-	LifetimeDollarsRefunded  LifetimeDollarsRefunded  `json:"lifetimeDollarsRefunded"`
-	Platform                 Platform                 `json:"platform"`
-	PlayTime                 PlayTime                 `json:"playTime"`
-	RefundPreference         RefundPreference         `json:"refundPreference,omitempty"`
-	SampleContentProvided    bool                     `json:"sampleContentProvided"`
-	UserStatus               UserStatus               `json:"userStatus"`
+	TransactionID            string            `json:"-"`
+	AccountTenure            AccountTenure     `json:"accountTenure"`
+	AppAccountToken          string            `json:"appAccountToken"`
+	ConsumptionStatus        ConsumptionStatus `json:"consumptionStatus"`
+	CustomerConsented        bool              `json:"customerConsented"`
+	DeliveryStatus           DeliveryStatus    `json:"deliveryStatus"`
+	LifetimeDollarsPurchased LifetimeDollars   `json:"lifetimeDollarsPurchased"`
+	LifetimeDollarsRefunded  LifetimeDollars   `json:"lifetimeDollarsRefunded"`
+	Platform                 Platform          `json:"platform"`
+	PlayTime                 PlayTime          `json:"playTime"`
+	RefundPreference         RefundPreference  `json:"refundPreference,omitempty"`
+	SampleContentProvided    bool              `json:"sampleContentProvided"`
+	UserStatus               UserStatus        `json:"userStatus"`
 }
 
 func (c *ConsumptionRequest) Validate() error {
@@ -192,6 +192,62 @@ func (c *ConsumptionRequest) Validate() error {
 	}
 
 	return nil
+}
+
+func (c *ConsumptionRequest) SetLifetimeDollarsPurchased(val float64) {
+	switch {
+	case val == 0:
+	case 0 < val && val <= 50:
+		c.LifetimeDollarsPurchased = LifetimeDollarsUpTo50
+	case 50 < val && val <= 100:
+		c.LifetimeDollarsPurchased = LifetimeDollarsUpTo100
+	case 100 < val && val <= 500:
+		c.LifetimeDollarsPurchased = LifetimeDollarsUpTo500
+	case 500 < val && val <= 1000:
+		c.LifetimeDollarsPurchased = LifetimeDollarsUpTo1000
+	case 1000 < val && val <= 2000:
+		c.LifetimeDollarsPurchased = LifetimeDollarsUpTo2000
+	case 2000 < val:
+		c.LifetimeDollarsPurchased = LifetimeDollarsUpTo2000
+	}
+}
+
+func (c *ConsumptionRequest) SetLifetimeDollarsRefunded(val float64) {
+	switch {
+	case val == 0:
+	case 0 < val && val <= 50:
+		c.LifetimeDollarsRefunded = LifetimeDollarsUpTo50
+	case 50 < val && val <= 100:
+		c.LifetimeDollarsRefunded = LifetimeDollarsUpTo100
+	case 100 < val && val <= 500:
+		c.LifetimeDollarsRefunded = LifetimeDollarsUpTo500
+	case 500 < val && val <= 1000:
+		c.LifetimeDollarsRefunded = LifetimeDollarsUpTo1000
+	case 1000 < val && val <= 2000:
+		c.LifetimeDollarsRefunded = LifetimeDollarsUpTo2000
+	case 2000 < val:
+		c.LifetimeDollarsRefunded = LifetimeDollarsUpTo2000
+	}
+}
+
+func (c *ConsumptionRequest) SetAccountTenure(val int64) {
+	switch {
+	case val == 0:
+	case 0 < val && val <= 3:
+		c.AccountTenure = AccountTenure3Days
+	case 3 < val && val <= 10:
+		c.AccountTenure = AccountTenure10Days
+	case 10 < val && val <= 30:
+		c.AccountTenure = AccountTenure30Days
+	case 30 < val && val <= 90:
+		c.AccountTenure = AccountTenure90Days
+	case 90 < val && val <= 180:
+		c.AccountTenure = AccountTenure180Days
+	case 180 < val && val <= 365:
+		c.AccountTenure = AccountTenure365Days
+	case 365 < val:
+		c.AccountTenure = AccountTenureOver365
+	}
 }
 
 // ExtendRenewalDateRequest contains information for extending a subscription renewal date.
