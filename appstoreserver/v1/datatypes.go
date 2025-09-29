@@ -44,28 +44,36 @@ type JWSTransactionDecodedPayload struct {
 }
 
 // GetExpiresDate returns the expiration date as a time.Time
-func (t *JWSTransactionDecodedPayload) GetExpiresDate() time.Time {
-	return time.UnixMilli(t.ExpiresDate)
+func (j *JWSTransactionDecodedPayload) GetExpiresDate() time.Time {
+	return time.UnixMilli(j.ExpiresDate)
 }
 
 // GetOriginalPurchaseDate returns the original purchase date as a time.Time
-func (t *JWSTransactionDecodedPayload) GetOriginalPurchaseDate() time.Time {
-	return time.UnixMilli(t.OriginalPurchaseDate)
+func (j *JWSTransactionDecodedPayload) GetOriginalPurchaseDate() time.Time {
+	return time.UnixMilli(j.OriginalPurchaseDate)
 }
 
 // GetPurchaseDate returns the purchase date as a time.Time
-func (t *JWSTransactionDecodedPayload) GetPurchaseDate() time.Time {
-	return time.UnixMilli(t.PurchaseDate)
+func (j *JWSTransactionDecodedPayload) GetPurchaseDate() time.Time {
+	return time.UnixMilli(j.PurchaseDate)
 }
 
 // GetRevocationDate returns the revocation date as a time.Time
-func (t *JWSTransactionDecodedPayload) GetRevocationDate() time.Time {
-	return time.UnixMilli(t.RevocationDate)
+func (j *JWSTransactionDecodedPayload) GetRevocationDate() time.Time {
+	return time.UnixMilli(j.RevocationDate)
 }
 
 // GetSignedDate returns the signed date as a time.Time
-func (t *JWSTransactionDecodedPayload) GetSignedDate() time.Time {
-	return time.UnixMilli(t.SignedDate)
+func (j *JWSTransactionDecodedPayload) GetSignedDate() time.Time {
+	return time.UnixMilli(j.SignedDate)
+}
+
+func (j *JWSTransactionDecodedPayload) IsProduction() bool {
+	return j.Environment == EnvironmentProduction
+}
+
+func (j *JWSTransactionDecodedPayload) IsSandbox() bool {
+	return j.Environment == EnvironmentSandbox
 }
 
 // JWSRenewalInfoDecodedPayload contains subscription renewal information signed by the App Store.
@@ -93,6 +101,34 @@ type JWSRenewalInfoDecodedPayload struct {
 	RenewalPrice                int64                 `json:"renewalPrice"`
 	SignedDate                  int64                 `json:"signedDate"`
 	AdvancedCommerceInfo        *AdvancedCommerceInfo `json:"advancedCommerceInfo,omitempty"`
+}
+
+// GetGracePeriodExpiresDate returns the grace period expiration date as a time.Time
+func (j *JWSRenewalInfoDecodedPayload) GetGracePeriodExpiresDate() time.Time {
+	return time.UnixMilli(j.GracePeriodExpiresDate)
+}
+
+// GetOriginalPurchaseDate returns the renewal date as a time.Time
+func (j *JWSRenewalInfoDecodedPayload) GetRenewalDate() time.Time {
+	return time.UnixMilli(j.RenewalDate)
+}
+
+// GetOriginalPurchaseDate returns the original purchase date as a time.Time
+func (j *JWSRenewalInfoDecodedPayload) GetRecentSubscriptionStartDate() time.Time {
+	return time.UnixMilli(j.RecentSubscriptionStartDate)
+}
+
+// GetSignedDate returns the signed date as a time.Time
+func (j *JWSRenewalInfoDecodedPayload) GetSignedDate() time.Time {
+	return time.UnixMilli(j.SignedDate)
+}
+
+func (j *JWSRenewalInfoDecodedPayload) IsProduction() bool {
+	return j.Environment == EnvironmentProduction
+}
+
+func (j *JWSRenewalInfoDecodedPayload) IsSandbox() bool {
+	return j.Environment == EnvironmentSandbox
 }
 
 // AdvancedCommerceInfo Renewal information that is present only for Advanced Commerce SKUs.
@@ -127,21 +163,6 @@ type AdvancedCommerceOffer struct {
 	PeriodCount int    `json:"periodCount,omitempty"`
 	Price       int64  `json:"price,omitempty"`
 	Reason      string `json:"reason,omitempty"`
-}
-
-// GetGracePeriodExpiresDate returns the grace period expiration date as a time.Time
-func (r *JWSRenewalInfoDecodedPayload) GetGracePeriodExpiresDate() time.Time {
-	return time.UnixMilli(r.GracePeriodExpiresDate)
-}
-
-// GetRecentSubscriptionStartDate returns the recent subscription start date as a time.Time
-func (r *JWSRenewalInfoDecodedPayload) GetRecentSubscriptionStartDate() time.Time {
-	return time.UnixMilli(r.RecentSubscriptionStartDate)
-}
-
-// GetSignedDate returns the signed date as a time.Time
-func (r *JWSRenewalInfoDecodedPayload) GetSignedDate() time.Time {
-	return time.UnixMilli(r.SignedDate)
 }
 
 // ConsumptionRequest contains consumption information for a transaction.
