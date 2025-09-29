@@ -250,6 +250,25 @@ func (c *ConsumptionRequest) SetAccountTenure(val int64) {
 	}
 }
 
+func (c *ConsumptionRequest) SetPlayTime(val time.Duration) {
+	switch {
+	case val.Minutes() < 5:
+		c.PlayTime = PlayTime5Min
+	case 5 < val.Minutes() && val.Minutes() < 60:
+		c.PlayTime = PlayTime1Hour
+	case 1 < val.Hours() && val.Hours() < 6:
+		c.PlayTime = PlayTime6Hours
+	case 6 < val.Hours() && val.Hours() < 24:
+		c.PlayTime = PlayTime1Day
+	case 24 < val.Hours() && val.Hours() < 96:
+		c.PlayTime = PlayTime4Days
+	case 96 < val.Hours() && val.Hours() < 168:
+		c.PlayTime = PlayTime16Days
+	case 168 < val.Hours():
+		c.PlayTime = PlayTimeOver16Days
+	}
+}
+
 // ExtendRenewalDateRequest contains information for extending a subscription renewal date.
 // See https://developer.apple.com/documentation/appstoreserverapi/extendrenewalDaterequest
 type ExtendRenewalDateRequest struct {

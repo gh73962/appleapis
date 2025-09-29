@@ -85,7 +85,7 @@ fmt.Printf("Found %d transactions\n", len(response.Payloads))
 ```go
 transactionInfo, err := client.GetTransactionInfo(ctx, "1000000123456789")
 if err != nil {
-    log.Fatal(err)
+    // handle error
 }
 
 fmt.Printf("Payload: %+v\n", transactionInfo.Payload)
@@ -96,7 +96,7 @@ fmt.Printf("Payload: %+v\n", transactionInfo.Payload)
 ```go
 status, err := client.GetAllSubscriptionStatuses(ctx, "1000000123456789")
 if err != nil {
-    log.Fatal(err)
+        // handle error
 }
 
 for _, data := range status.Data {
@@ -104,6 +104,20 @@ for _, data := range status.Data {
     for _, transaction := range data.LastTransactions {
         fmt.Printf("Status: %s\n", transaction.Status)
     }
+}
+```
+
+### 4. Easily 
+
+```go
+var req appstoreserver.ConsumptionRequest
+req.SetSetLifetimeDollarsPurchased(5.99)
+req.SetLifetimeDollarsRefunded(5.99)
+req.SetAccountTenure(365)
+req.SetPlayTime(96*time.Hour)
+
+if err := client.SendConsumptionInfo(ctx, &req); err != nil {
+        // handle error
 }
 ```
 
