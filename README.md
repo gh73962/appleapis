@@ -96,7 +96,7 @@ fmt.Printf("Payload: %+v\n", transactionInfo.Payload)
 ```go
 status, err := client.GetAllSubscriptionStatuses(ctx, "1000000123456789")
 if err != nil {
-        // handle error
+    // handle error
 }
 
 for _, data := range status.Data {
@@ -107,7 +107,7 @@ for _, data := range status.Data {
 }
 ```
 
-### 4. Easily 
+### 4. Easily SendConsumptionInfo
 
 ```go
 var req appstoreserver.ConsumptionRequest
@@ -117,7 +117,7 @@ req.SetAccountTenure(365)
 req.SetPlayTime(96*time.Hour)
 
 if err := client.SendConsumptionInfo(ctx, &req); err != nil {
-        // handle error
+    // handle error
 }
 ```
 
